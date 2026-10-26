@@ -1,0 +1,274 @@
+{
+  "label": "Phase 3.1 statistical audit - POST HOC. Does not replace the pre-specified Phase 3 analysis.",
+  "inputs": {
+    "results_json_config_hash": "ae9db57acecd",
+    "dataset_version": "67da9d294be3"
+  },
+  "integrity": {
+    "workloads_per_method": {
+      "adaptive_online": 300,
+      "adaptive_selected": 300,
+      "adaptive_submission": 300,
+      "best_fixed": 300,
+      "fixed_RR2": 300,
+      "oracle_fixed": 300,
+      "oracle_online": 300,
+      "phase2_map_predicted": 300,
+      "phase2_map_true": 300
+    },
+    "duplicate_workload_method_rows": 0,
+    "missing_turnaround": 0,
+    "ids_equal_grouped_split_test_ids": true,
+    "ids_overlapping_train_or_validation": 0,
+    "config_hash_results_equals_frozen": true,
+    "adaptive_online_identical_to_adaptive_selected": true
+  },
+  "comparisons": {
+    "primary": {
+      "comparison": "adaptive_selected vs best_fixed",
+      "n_workloads": 300,
+      "n_zero_difference": 275,
+      "n_better": 14,
+      "n_worse": 11,
+      "min_abs_nonzero_log_ratio": 0.0024242436115062545,
+      "estimates": {
+        "geometric_mean_per_workload_change": -0.0037552561006426156,
+        "arithmetic_mean_per_workload_change": -0.0032611572342413787,
+        "change_in_mean_turnaround": -0.001740658449461252,
+        "mean_difference_ticks": -0.3298398482364434
+      },
+      "intervals_for_geometric_mean_change": {
+        "percentile_100k": [
+          -0.0075784935942612725,
+          -0.0002863258094340766
+        ],
+        "bca_20k": [
+          -0.008139749248648558,
+          -0.0006804856641810363
+        ],
+        "bootstrap_share_mean_ge_0": 0.01632
+      },
+      "tests": {
+        "wilcoxon_pratt_scipy_prespecified": 0.502460631216268,
+        "wilcoxon_pratt_manual": {
+          "T_plus": 3117.0,
+          "z": -0.6706231497162697,
+          "p": 0.502460631216268,
+          "nonzero_rank_range": [
+            276.0,
+            300.0
+          ]
+        },
+        "wilcoxon_zeros_dropped": 0.05875152349472046,
+        "sign_test": 0.6900379657745361,
+        "t_test_log_ratio": 0.043941562426137844,
+        "signflip_permutation_mean_log_ratio": 0.041639745235443115,
+        "signflip_kind": "exact (33554432 patterns)"
+      },
+      "effect_sizes": {
+        "rank_biserial_zeros_dropped": -0.4338461538461538,
+        "rank_biserial_pratt_ranks": -0.13416666666666666,
+        "cohens_dz_log_ratio": -0.11680977902898264
+      }
+    },
+    "submission_vs_best_fixed": {
+      "comparison": "adaptive_submission vs best_fixed",
+      "n_workloads": 300,
+      "n_zero_difference": 226,
+      "n_better": 46,
+      "n_worse": 28,
+      "min_abs_nonzero_log_ratio": 0.0008149295536977164,
+      "estimates": {
+        "geometric_mean_per_workload_change": -0.0009942176012827058,
+        "arithmetic_mean_per_workload_change": -0.0007329548156213857,
+        "change_in_mean_turnaround": -0.0007408052955293343,
+        "mean_difference_ticks": -0.14037625033548692
+      },
+      "intervals_for_geometric_mean_change": {
+        "percentile_100k": [
+          -0.0035804325844925595,
+          0.0015983670141730272
+        ],
+        "bca_20k": [
+          -0.0035988782843148974,
+          0.0015855736911266813
+        ],
+        "bootstrap_share_mean_ge_0": 0.22495
+      },
+      "tests": {
+        "wilcoxon_pratt_scipy_prespecified": 0.04889239503624234,
+        "wilcoxon_pratt_manual": {
+          "T_plus": 7510.0,
+          "z": -1.969528832125113,
+          "p": 0.04889239503624234,
+          "nonzero_rank_range": [
+            227.0,
+            300.0
+          ]
+        },
+        "wilcoxon_zeros_dropped": 0.26826064627768265,
+        "sign_test": 0.04739297550405176,
+        "t_test_log_ratio": 0.45227704485675235,
+        "signflip_permutation_mean_log_ratio": 0.45390273048634755,
+        "signflip_kind": "Monte Carlo (200000 draws)"
+      },
+      "effect_sizes": {
+        "rank_biserial_zeros_dropped": -0.14810810810810812,
+        "rank_biserial_pratt_ranks": -0.22970408738909687,
+        "cohens_dz_log_ratio": -0.04345189774746885
+      }
+    },
+    "selected_vs_fixed_RR2": {
+      "comparison": "adaptive_selected vs fixed_RR2",
+      "n_workloads": 300,
+      "n_zero_difference": 4,
+      "n_better": 175,
+      "n_worse": 121,
+      "min_abs_nonzero_log_ratio": 6.659341393599398e-05,
+      "estimates": {
+        "geometric_mean_per_workload_change": -0.005441271201878995,
+        "arithmetic_mean_per_workload_change": -0.00493174546004648,
+        "change_in_mean_turnaround": -0.0033119080941721446,
+        "mean_difference_ticks": -0.6285675394860009
+      },
+      "intervals_for_geometric_mean_change": {
+        "percentile_100k": [
+          -0.009096484655107982,
+          -0.001850424116741599
+        ],
+        "bca_20k": [
+          -0.009278268318740542,
+          -0.0019565973081235298
+        ],
+        "bootstrap_share_mean_ge_0": 0.00142
+      },
+      "tests": {
+        "wilcoxon_pratt_scipy_prespecified": 0.0006916748284587658,
+        "wilcoxon_pratt_manual": {
+          "T_plus": 17468.0,
+          "z": -3.3928580041293763,
+          "p": 0.0006916748284587658,
+          "nonzero_rank_range": [
+            5.0,
+            300.0
+          ]
+        },
+        "wilcoxon_zeros_dropped": 0.0007028554238114844,
+        "sign_test": 0.0020150120807516337,
+        "t_test_log_ratio": 0.0036315935314232737,
+        "signflip_permutation_mean_log_ratio": 0.0030449847750761245,
+        "signflip_kind": "Monte Carlo (200000 draws)"
+      },
+      "effect_sizes": {
+        "rank_biserial_zeros_dropped": -0.22722722722722724,
+        "rank_biserial_pratt_ranks": -0.2260522817899867,
+        "cohens_dz_log_ratio": -0.16926061215991964
+      }
+    }
+  },
+  "committed_vs_recomputed": {
+    "primary": {
+      "geo_rel_change_matches": true,
+      "wilcoxon_p_matches": true,
+      "rank_biserial_committed": -0.4338461538461538,
+      "rank_biserial_committed_is_zeros_dropped_version": true,
+      "mean_abs_diff_matches": true,
+      "committed_percentile_ci_10k": [
+        -0.0075061890803639056,
+        -0.000385505128833845
+      ],
+      "committed_holm_p_9": 1.0
+    },
+    "submission_vs_best_fixed": {
+      "geo_rel_change_matches": true,
+      "wilcoxon_p_matches": true,
+      "rank_biserial_committed": -0.14810810810810812,
+      "rank_biserial_committed_is_zeros_dropped_version": true,
+      "mean_abs_diff_matches": true,
+      "committed_percentile_ci_10k": [
+        -0.0035774586239971087,
+        0.001641481542513499
+      ],
+      "committed_holm_p_9": 0.29335437021745403
+    },
+    "selected_vs_fixed_RR2": {
+      "geo_rel_change_matches": true,
+      "wilcoxon_p_matches": true,
+      "rank_biserial_committed": -0.22722722722722724,
+      "rank_biserial_committed_is_zeros_dropped_version": true,
+      "mean_abs_diff_matches": true,
+      "committed_percentile_ci_10k": [
+        -0.0091649733874376,
+        -0.001875137758845885
+      ],
+      "committed_holm_p_9": 0.006225073456128892
+    }
+  },
+  "holm_family": {
+    "committed_size": 9,
+    "distinct_size": 7,
+    "table": {
+      "fixed_RR2 vs best_fixed": {
+        "raw_p": 0.07602434593187007,
+        "holm_committed_9": 0.38012172965935037,
+        "holm_recomputed_9": 0.38012172965935037,
+        "holm_distinct_7": 0.3040973837274803
+      },
+      "phase2_map_predicted vs best_fixed": {
+        "raw_p": 0.8739812002653593,
+        "holm_committed_9": 1.0,
+        "holm_recomputed_9": 1.0,
+        "holm_distinct_7": 1.0
+      },
+      "adaptive_selected vs best_fixed": {
+        "raw_p": 0.502460631216268,
+        "holm_committed_9": 1.0,
+        "holm_recomputed_9": 1.0,
+        "holm_distinct_7": 1.0
+      },
+      "adaptive_submission vs best_fixed": {
+        "raw_p": 0.04889239503624234,
+        "holm_committed_9": 0.29335437021745403,
+        "holm_recomputed_9": 0.29335437021745403,
+        "holm_distinct_7": 0.2444619751812117
+      },
+      "adaptive_online vs best_fixed": {
+        "raw_p": 0.502460631216268,
+        "holm_committed_9": 1.0,
+        "holm_recomputed_9": 1.0,
+        "holm_distinct_7": null
+      },
+      "phase2_map_predicted vs fixed_RR2": {
+        "raw_p": 0.6452896686580598,
+        "holm_committed_9": 1.0,
+        "holm_recomputed_9": 1.0,
+        "holm_distinct_7": 1.0
+      },
+      "adaptive_selected vs fixed_RR2": {
+        "raw_p": 0.0006916748284587658,
+        "holm_committed_9": 0.006225073456128892,
+        "holm_recomputed_9": 0.006225073456128892,
+        "holm_distinct_7": 0.00484172379921136
+      },
+      "adaptive_submission vs fixed_RR2": {
+        "raw_p": 0.01203704087752528,
+        "holm_committed_9": 0.08425928614267697,
+        "holm_recomputed_9": 0.08425928614267697,
+        "holm_distinct_7": 0.07222224526515168
+      },
+      "adaptive_online vs fixed_RR2": {
+        "raw_p": 0.0006916748284587658,
+        "holm_committed_9": 0.006225073456128892,
+        "holm_recomputed_9": 0.006225073456128892,
+        "holm_distinct_7": null
+      }
+    }
+  },
+  "resampling_counts_used_in_phase3": {
+    "main_comparisons": 10000,
+    "breakdowns": 2000
+  },
+  "seeds": {
+    "audit": 2024
+  }
+}

@@ -153,3 +153,18 @@ def test_committed_phase2_report_matches_dataset_and_selection():
     assert m["dataset_version"] == "67da9d294be3"
     assert m["main_experiment"]["selected_model"] == "logistic_regression"
     assert m["policy_experiment"]["class_policy_map"] == {"cpu_bound": "FCFS", "mixed": "RR2", "io_bound": "RR4"}
+
+
+def test_committed_audit_matches_committed_phase3_results():
+    """The post-hoc audit artifact must agree with the committed evidence it audits."""
+    audit = json.loads((ROOT / "reports" / "phase3" / "audit" / "audit_results.json").read_text(encoding="utf-8"))
+    res = json.loads((ROOT / "reports" / "phase3" / "results.json").read_text(encoding="utf-8"))
+    assert audit["inputs"]["results_json_config_hash"] == res["config_hash"]
+    assert all(audit["integrity"][k] for k in ("ids_equal_grouped_split_test_ids", "config_hash_results_equals_frozen"))
+    assert audit["integrity"]["ids_overlapping_train_or_validation"] == 0
+    for key in ("primary", "submission_vs_best_fixed", "selected_vs_fixed_RR2"):
+        c = audit["committed_vs_recomputed"][key]
+        assert c["geo_rel_change_matches"] and c["wilcoxon_p_matches"] and c["mean_abs_diff_matches"]
+    p = audit["comparisons"]["primary"]
+    assert p["tests"]["wilcoxon_pratt_scipy_prespecified"] == res["primary"]["wilcoxon_p"]
+    assert p["estimates"]["geometric_mean_per_workload_change"] == res["primary"]["geo_rel_change"]
