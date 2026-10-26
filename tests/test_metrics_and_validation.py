@@ -67,6 +67,26 @@ def test_metrics_reject_inconsistent_timeline():
         compute_metrics(early)
 
 
+# Regression (Phase 2 audit): these timelines used to be accepted and reported
+# CPU utilization of 3.5 and 2.0 respectively.
+def test_metrics_reject_unknown_pid():
+    s = Schedule("x", (P("A", 0, 2),), (Slice(0, 2, "A"), Slice(2, 7, "GHOST")))
+    with pytest.raises(ValueError, match="unknown pid"):
+        compute_metrics(s)
+
+
+def test_metrics_reject_overlapping_slices():
+    s = Schedule("x", (P("A", 0, 2), P("B", 0, 2)), (Slice(0, 2, "A"), Slice(0, 2, "B")))
+    with pytest.raises(ValueError, match="overlaps"):
+        compute_metrics(s)
+
+
+def test_metrics_reject_empty_slice():
+    s = Schedule("x", (P("A", 0, 2),), (Slice(0, 0, None), Slice(0, 2, "A")))
+    with pytest.raises(ValueError, match="empty"):
+        compute_metrics(s)
+
+
 # --- Validation -------------------------------------------------------------------
 
 ALGOS = [fcfs, sjf, srtf, lambda w: round_robin(w, 2), priority]

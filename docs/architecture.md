@@ -142,8 +142,37 @@ Aggregate:
 * For an empty workload, all averages and rates are reported as `0.0`.
 
 `compute_metrics` also validates the schedule: it raises `ValueError` if any
+slice is empty or overlaps the previous one, a slice runs an unknown pid, any
 process receives more or less CPU time than its burst, or is dispatched before
 its arrival.
+
+## Phase 2 audit notes
+
+* **Correction.** Before Phase 2, `compute_metrics` silently accepted
+  hand-built timelines with unknown pids or overlapping slices (e.g. reporting
+  350% CPU utilization). The engine never produces such timelines, but the
+  Phase 3 adaptive scheduler will feed new timelines into the same metrics
+  code, so these are now rejected. Valid timelines give identical results.
+  Regression tests: `test_metrics_reject_unknown_pid`,
+  `test_metrics_reject_overlapping_slices`, `test_metrics_reject_empty_slice`.
+* **When SRTF is optimal.** SRTF (SRPT) minimizes the *sum of completion
+  times* — hence average turnaround and, since bursts are fixed, average
+  waiting — on a single CPU when (1) burst lengths are known exactly,
+  (2) preemption is free and allowed whenever a process arrives, and (3) no
+  I/O or other blocking occurs. All three hold in this simulator: remaining
+  times only change for the running process, so re-evaluating at arrivals is
+  sufficient. It is **not** optimal for average response time or maximum
+  turnaround, and the guarantee disappears once bursts must be *predicted* or
+  context switches cost time. `test_srtf_minimizes_average_turnaround` checks
+  the weaker claim that SRTF is never beaten by the other implemented
+  algorithms on random workloads.
+* **Context switches.** The convention above is applied in exactly one place
+  (`compute_metrics`) and tested in `test_context_switch_counting_rules`.
+* **Integer ticks.** The Phase 2 generator produces only integer arrivals
+  (`>= 0`) and bursts (`>= 1`); tests enforce this.
+* **CPU-burst-only limitation.** Each `Process` has one CPU burst and never
+  blocks. Phase 2 *records* I/O behaviour in the dataset, but no experiment in
+  this repository simulates I/O blocking yet (see `docs/phase2_ml.md`).
 
 ## Testing strategy
 

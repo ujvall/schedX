@@ -59,19 +59,29 @@ def _mean(values: list[int]) -> float:
 def compute_metrics(schedule: Schedule) -> ScheduleMetrics:
     """Compute per-process and aggregate metrics for ``schedule``.
 
-    Raises ``ValueError`` if the timeline does not give every process exactly
-    its burst, or runs a process before it arrives.
+    Raises ``ValueError`` if the timeline has empty or overlapping slices,
+    runs an unknown pid, does not give every process exactly its burst, or
+    runs a process before it arrives.
     """
+    known = {p.pid for p in schedule.processes}
     first_run: dict[str, int] = {}
     completion: dict[str, int] = {}
     executed: dict[str, int] = {}
     switches = 0
     last_pid: str | None = None
     busy = 0
+    prev_end: int | None = None
 
     for s in schedule.timeline:
+        if s.duration <= 0:
+            raise ValueError(f"empty or negative slice {s}")
+        if prev_end is not None and s.start < prev_end:
+            raise ValueError(f"slice {s} overlaps the previous slice ending at {prev_end}")
+        prev_end = s.end
         if s.idle:
             continue
+        if s.pid not in known:
+            raise ValueError(f"timeline runs unknown pid {s.pid!r}")
         busy += s.duration
         first_run.setdefault(s.pid, s.start)
         completion[s.pid] = s.end
