@@ -15,9 +15,9 @@ Offline classification on synthetic workloads. No adaptive scheduling and no OS-
 
 | model | params | val macro-F1 | test acc | macro P | macro R | macro F1 | acc k=1/2/3 | fit s | infer µs/row |
 |---|---|---|---|---|---|---|---|---|---|
-| logistic_regression | `{'C': 1.0}` | 0.869 | 0.876 | 0.874 | 0.874 | 0.874 | 0.800/0.913/0.913 | 0.15 | 7.4 |
-| decision_tree | `{'max_depth': 8, 'min_samples_leaf': 1}` | 0.813 | 0.864 | 0.864 | 0.864 | 0.864 | 0.787/0.893/0.913 | 0.06 | 5.8 |
-| random_forest | `{'max_depth': 8, 'min_samples_leaf': 3}` | 0.858 | 0.892 | 0.891 | 0.892 | 0.892 | 0.823/0.920/0.933 | 1.53 | 37.5 |
+| logistic_regression | `{'C': 1.0}` | 0.869 | 0.876 | 0.874 | 0.874 | 0.874 | 0.800/0.913/0.913 | 0.08 | 4.0 |
+| decision_tree | `{'max_depth': 8, 'min_samples_leaf': 1}` | 0.813 | 0.864 | 0.864 | 0.864 | 0.864 | 0.787/0.893/0.913 | 0.06 | 3.5 |
+| random_forest | `{'max_depth': 8, 'min_samples_leaf': 3}` | 0.858 | 0.892 | 0.891 | 0.892 | 0.892 | 0.823/0.920/0.933 | 1.31 | 35.0 |
 
 Selected for downstream use (by validation macro-F1): **logistic_regression**.
 

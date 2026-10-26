@@ -140,9 +140,14 @@ accuracy, macro precision/recall/F1, per-class precision/recall/F1,
 confusion matrix, fit time, and per-row inference time; plus test accuracy
 per horizon `k`.
 
-**Retrospective experiment (not deployable).** A Random Forest trained on
-A + C features measures how recoverable the label is from lifetime totals.
-It is an upper-bound sanity check, not a prediction a scheduler could make.
+**Hindsight experiment (not deployable).** A Random Forest trained on
+A + B + C features measures what lifetime totals add on top of the
+deployable features. It is a research comparison, not a prediction a
+scheduler could make. (An early A + C-only run scored *below* the deployable
+model: the label counts I/O-bound *processes*, while the C features are
+time-weighted workload aggregates that blur per-process composition. C
+features are therefore not an upper bound on their own, which is why the
+hindsight experiment adds C to A + B rather than replacing B.)
 
 ## 6. Offline policy-value experiment
 
@@ -167,13 +172,86 @@ a deliberately limited offline experiment to ask whether the predicted class
   mapping can also be supplied explicitly in the config.
 * **Evaluated on test workloads:** fixed baseline, mapping applied to the
   *predicted* class (per horizon), mapping applied to the *true* class, and
-  the per-workload oracle. Predicted class and confidence are recorded per
-  row.
+  the per-workload oracle. Each rule's per-workload regret is compared with
+  the baseline's on the same workloads, with a seeded paired bootstrap 95%
+  CI (2,000 resamples). Predicted class, confidence, and class
+  probabilities are recorded per row in `artifacts/predictions_test.csv`.
 
 This estimates the value of the class signal *under the projection*. It is
 not adaptive scheduling and does not show that ML improves scheduling.
 
-## 7. Reproduce
+### Information available to the Phase 3 decision
+
+At a decision instant the adaptive scheduler may use only: the submitted job
+list (A), and per-process history it has itself observed — completed CPU
+bursts, completed I/O waits, and terminations (B). It may not use lifetime
+totals, future bursts, the label, or generator parameters. The Phase 2
+features are defined so the same functions (`pre_execution_features`,
+`online_features`) can be computed from that observed history.
+
+## 7. Results (configs/phase2.json, dataset version `67da9d294be3`)
+
+Full tables: [`reports/phase2/summary.md`](../reports/phase2/summary.md);
+figures in `reports/phase2/figures/`. Numbers below are copied from that
+generated report.
+
+* **Dataset:** 1,500 workloads, 21,453 processes, 4,500 feature rows.
+  Classes: 484 `cpu_bound`, 489 `mixed`, 527 `io_bound`. 12% of workloads
+  have a label different from their generator regime; 3% of processes differ
+  from their intended kind.
+* **Split:** 900 / 300 / 300 workloads (2,700 / 900 / 900 rows), class
+  proportions matched by stratification.
+* **Test results, deployable features (A + B):**
+
+  | model | val macro-F1 | test acc | macro F1 | acc k=1 / 2 / 3 |
+  |---|---|---|---|---|
+  | Logistic Regression | 0.869 | 0.876 | 0.874 | 0.800 / 0.913 / 0.913 |
+  | Decision Tree | 0.813 | 0.864 | 0.864 | 0.787 / 0.893 / 0.913 |
+  | Random Forest | 0.858 | 0.892 | 0.892 | 0.823 / 0.920 / 0.933 |
+
+  Logistic Regression is the **validation-selected** model. Random Forest
+  scores higher on test, but switching to it because of that would use the
+  test set for model selection, so the selection stands. `mixed` is the
+  hardest class (F1 0.80–0.84); `cpu_bound` and `io_bound` are almost never
+  confused with each other. Accuracy rises with the observation horizon.
+* **Hindsight (A + B + C, not deployable):** Random Forest test accuracy
+  0.899 — only +0.007 over deployable features.
+* **Policy-value experiment:** fixed baseline RR2 (chosen on
+  train + validation); learned map `cpu_bound → FCFS`, `mixed → RR2`,
+  `io_bound → RR4`. On test, every class-conditioned rule had slightly lower
+  mean regret than RR2 (Δ between −0.006 and −0.014), but **every 95% CI
+  includes 0**, including the true-class map. The per-workload oracle is
+  ~5.7% better than RR2. Interpretation: under this projection the
+  three-class label is a weak proxy for the best quantum; per-workload
+  burst statistics, not the class alone, may be needed in Phase 3.
+* **Feature importance** (Decision Tree, Random Forest; impurity-based):
+  observed CPU-burst mean/median and the observed share of I/O-dominant
+  processes dominate. Impurity importance describes how the fitted models
+  split, is biased toward continuous and correlated features, and does not
+  establish causation.
+
+## 8. Limitations
+
+* **Synthetic data only.** Workloads come from a parametric generator; real
+  process traces may differ in distribution and in what separates classes.
+  High accuracy here mostly shows that the generator's classes are separable
+  from early bursts.
+* **Label definition is a choice.** The thresholds (0.5 per process;
+  0.25 / 0.75 share per workload) are documented but arbitrary; other
+  definitions would change results.
+* **Burst-count horizon, not wall-clock.** B features assume the first k
+  bursts of *every* process are observed. In a real run, late arrivals are
+  observed later, and observation time depends on scheduling.
+* **No I/O simulation.** I/O is recorded but never simulated; the policy
+  experiment uses an open-loop CPU-only projection with zero switch cost.
+* **Small effects, one dataset seed.** The policy-value differences are
+  within noise; results are from one master seed and one split seed.
+* **Timing numbers** are single-run wall-clock measurements on one laptop
+  and vary between runs; `metrics.json` changes slightly on every rerun for
+  that reason.
+* `load_model` uses joblib (pickle): only load model files you created.
+
+## 9. Reproduce
 
 ```bash
 python scripts/generate_dataset.py --config configs/phase2.json
@@ -181,5 +259,3 @@ python scripts/train_evaluate.py --config configs/phase2.json
 python scripts/plot_results.py
 python scripts/predict.py --seed 12345
 ```
-
-Results are summarized in [`reports/phase2/summary.md`](../reports/phase2/summary.md).

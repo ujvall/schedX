@@ -1,8 +1,9 @@
-# SchedX Architecture (Phase 1)
+# SchedX Architecture
 
 Phase 1 delivers a deterministic, CPU-burst-only scheduling simulator and a
-shared metrics module. It has no third-party runtime dependencies and no
-knowledge of the future ML or UI layers.
+shared metrics module. The core uses only the standard library and has no
+knowledge of the ML or UI layers. Phase 2 adds dataset and ML modules on top
+of it; their design is in [`phase2_ml.md`](phase2_ml.md).
 
 ## Modules
 
@@ -11,11 +12,16 @@ knowledge of the future ML or UI layers.
 | `schedx/models.py` | `Process`, `Slice`, `Schedule` data classes and `validate_processes`. |
 | `schedx/scheduler.py` | The shared simulation engine (`_simulate`) and the five public algorithms. |
 | `schedx/metrics.py` | `compute_metrics(schedule)` → per-process and aggregate metrics. |
+| `schedx/workload.py` | Phase 2: seeded CPU/IO trace generator, label rules, CSV round-trip. |
+| `schedx/features.py` | Phase 2: column availability catalog (A/B/C) and feature extraction. |
+| `schedx/ml.py` | Phase 2: grouped split, model pipelines, evaluation, persistence, inference. |
+| `schedx/policy_eval.py` | Phase 2: offline policy-value experiment (uses scheduler + metrics). |
 | `scripts/demo.py` | Runs every algorithm on a sample workload and prints a text Gantt chart. |
 
-Dependency direction: `metrics → models ← scheduler`. Metrics never call the
-scheduler, so any timeline (including one produced by a future adaptive or
-ML-driven policy) can be measured with the same code.
+Dependency direction: `metrics → models ← scheduler`; Phase 2 modules depend
+on the core, never the reverse. Metrics never call the scheduler, so any
+timeline (including one produced by a future adaptive or ML-driven policy)
+can be measured with the same code.
 
 ## Time unit
 
