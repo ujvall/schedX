@@ -200,3 +200,149 @@ and records the reason. Missing feature columns are a schema error and raise.
 The test set is evaluated once with the frozen strategy. If the result is
 inconclusive it is reported as inconclusive; there is no re-tuning against
 test.
+
+## 10. Results
+
+Numbers below are copied from the generated
+[`reports/phase3/summary.md`](../reports/phase3/summary.md) (config hash
+`ae9db57acecd`, dataset `67da9d294be3`). Figures are in
+`reports/phase3/figures/`.
+
+### Fit stage (train + validation only; frozen before test)
+
+* **Best fixed quantum: RR1** (mean log regret 0.0312, vs RR2 0.0335,
+  RR4 0.0394, RR8 0.0638). The Phase 2 baseline RR2 is therefore not the
+  strongest fixed choice once RR1 is a candidate.
+* 61 configurations were fitted on train and scored on validation. **Frozen
+  controller:** online `tree_classifier` (depth 3, min leaf 20) deciding
+  after the 20th job completion. Validation: −0.47% geometric-mean turnaround
+  vs RR1, with the quantum changed on 7% of validation workloads. Best
+  submission-time controller: `regret_regressor` (depth 2). At m = 20, about
+  4% of workloads have no decision point (fallback to RR1).
+* The frozen rule (`reports/phase3/frozen_controller.json`) switches RR1 →
+  RR8 only when the median completed burst exceeds 1.75 ticks, the
+  completed-burst CV is ≤ 0.707, and pending jobs have received ≤ 1.275
+  ticks on average. In words: long, regular bursts favour a larger quantum,
+  which matches queueing theory (FCFS-like service suits low variability,
+  processor-sharing-like service suits high variability).
+* The frozen commit (`a13ffba`) predates the test evaluation commit
+  (`4ada3b7`) in the Git history.
+
+### Test stage (300 held-out workloads, evaluated once)
+
+| comparison (avg turnaround) | geo change | 95% CI | better / equal / worse | Wilcoxon p | Holm p |
+|---|---|---|---|---|---|
+| **adaptive (selected) vs best fixed RR1 — primary** | **−0.38%** | [−0.75%, −0.04%] | 5% / 92% / 4% | 0.50 | 1.00 |
+| adaptive (submission) vs RR1 | −0.10% | [−0.36%, +0.16%] | 15% / 75% / 9% | 0.049 | 0.29 |
+| Phase 2 class map (predicted) vs RR1 | −0.95% | [−2.33%, +0.44%] | 44% / 1% / 55% | 0.87 | 1.00 |
+| fixed RR2 vs RR1 | +0.17% | [−0.09%, +0.44%] | 44% / 1% / 55% | 0.076 | 0.38 |
+| adaptive (selected) vs fixed RR2 | −0.54% | [−0.92%, −0.19%] | 58% / 1% / 40% | 0.0007 | 0.006 |
+| *true-class map vs RR1 (not deployable)* | −0.48% | [−1.94%, +1.04%] | 43% / 0% / 57% | 0.53 | — |
+| *oracle, fixed per workload (not deployable)* | −2.92% | [−3.49%, −2.37%] | 54% / 46% / 0% | <1e-30 | — |
+| *oracle, best switch at decision point (not deployable)* | −1.78% | [−2.25%, −1.34%] | 52% / 48% / 0% | <1e-30 | — |
+
+Mean absolute difference for the primary comparison: −0.33 ticks, 95% CI
+[−0.86, +0.18]. Effect sizes: rank-biserial −0.43 (over the 25 workloads
+whose decision changed), Cohen's dz −0.12. Share of the RR1 → oracle gap
+closed: 12.7% (selected), 3.4% (submission), 60.7% (online oracle).
+
+**Answer to H1: no statistically supported improvement over the best fixed
+quantum.** The pre-specified Wilcoxon test does not reject (p = 0.50,
+Holm p = 1). The paired bootstrap CI of the geometric-mean change only just
+excludes zero. The controller changed the decision on 25 of 300 workloads:
+14 improved and 11 got worse, and the gains were larger than the losses. A
+*post-hoc* check, labelled as such in the report, gives Wilcoxon p = 0.059 on
+those 25 workloads and sign-test p = 0.69. The data are consistent with a
+small benefit (well under 1%) concentrated in a few workloads, but they do
+not establish it.
+
+Against the weaker Phase 2 baseline RR2, the adaptive controller is
+significantly better (−0.54%, Holm p = 0.006). Most of that comes from its
+RR1 default: RR1 vs RR2 is itself −0.17% (not significant). This is why the
+primary comparison is against the best fixed quantum.
+
+### Secondary outcomes (test means)
+
+| method | turnaround | waiting | response | context switches |
+|---|---|---|---|---|
+| best fixed RR1 | 189.49 | 180.73 | 20.33 | 575.8 |
+| adaptive (selected) | 189.16 | 180.40 | 25.05 | 552.1 |
+| fixed RR2 | 189.79 | 181.03 | 38.02 | 309.9 |
+| Phase 2 class map (predicted) | 184.51 | 175.76 | 124.73 | 173.8 |
+
+Throughput (0.134 jobs/tick) and CPU utilization (91.3%) are identical for
+all methods, as expected for work-conserving policies on the same jobs.
+Switching to RR8 trades response time (+23% vs RR1) for a small turnaround
+gain and fewer context switches. The Phase 2 class map has the lowest mean
+turnaround in ticks (its FCFS choice suits large CPU-bound workloads), but
+its per-workload effect is not significant and its response time is about 6×
+worse. It optimizes a different trade-off than the RR-only controller.
+
+### Where the controller helps (exploratory, no multiplicity correction)
+
+* **By class:** `io_bound` −1.21% [−2.29%, −0.25%]; `cpu_bound` 0.00%
+  (never switched); `mixed` +0.15% [0.00%, +0.43%].
+* **By burst variability:** lowest `burst_cv` tercile −1.07%
+  [−2.07%, −0.26%]; middle −0.15%; highest +0.09%. The oracle's headroom
+  shrinks the same way (−5.9% → −0.3%).
+* **By process count:** no clear pattern (−0.2% to −0.6%, CIs touching 0).
+
+## 11. Interpretation
+
+1. **There is real headroom.** Choosing the best quantum per workload would
+   cut turnaround by about 3% vs RR1 on test; switching only at the online
+   decision point (m = 20) could still gain 1.8%. The per-workload winner is
+   split mainly between RR1 and RR8.
+2. **The signal exists but is poorly observable.** On training workloads
+   the true job-burst CV correlates strongly with whether RR8 beats RR1
+   (Spearman 0.79). The CV observed online at the decision point correlates
+   only 0.46 with that outcome and 0.42 with the true CV. Under the RR1
+   default, short bursts finish first, so the completed bursts available at
+   decision time are a biased sample. The controller is therefore cautious
+   and switches rarely.
+3. **Submission-time features are close to useless** for this decision
+   (3.4% of the gap closed): arrival patterns and priorities say little about
+   burst lengths.
+4. **Coarse classes are not the right target.** Even the true-class map does
+   not reliably beat RR1, consistent with Phase 2.
+
+## 12. Limitations and future work
+
+* **Synthetic, open-loop, CPU-only.** Bursts become independent jobs
+  released at contention-free times; I/O blocking is not simulated and
+  contention does not delay later bursts. Results may not transfer to real
+  systems or closed-loop I/O.
+* **Free context switches.** RR1 performs about 1.9× as many switches as
+  RR2 on test workloads. Any real per-switch cost would penalize RR1 and
+  could change both the best fixed quantum and the controller's value. No
+  overhead value is assumed; a switching-cost sensitivity analysis needs a
+  simulator that charges overhead.
+* **One decision per workload.** The controller decides once. Periodic
+  re-decision, or a decision triggered by elapsed time rather than a
+  completion count, is untested.
+* **Biased online observation.** Censoring-aware estimates of the burst
+  distribution (using the CPU time received by unfinished jobs), or a
+  short exploratory phase at a larger quantum, could expose the variability
+  signal better. This was identified on training data only *after* the
+  configuration was frozen, so it was not applied in this phase.
+* **Batch-submission assumption** for A features (arrival times known up
+  front).
+* **Single dataset seed and split**; 300 test workloads. Subgroup results
+  are exploratory.
+* The objective is average turnaround only. Response time worsens when the
+  controller switches to RR8, so a deployment would need an explicit
+  multi-objective choice.
+
+## 13. Reproduce
+
+```bash
+python scripts/generate_dataset.py          # Phase 2 dataset (if not present)
+python scripts/train_evaluate.py            # Phase 2 models (Phase 2 class-map reference)
+python scripts/phase3_train.py              # fit + select on train/validation, freeze
+python scripts/phase3_evaluate.py           # evaluate frozen controllers on test, once
+python scripts/phase3_plots.py              # figures from saved results
+```
+
+Runtime ≈ 1.5 min for training and ≈ 0.5 min for evaluation on a laptop.
+`phase3_evaluate.py` refuses to run if `configs/phase3.json` or the dataset
+changed after freezing.

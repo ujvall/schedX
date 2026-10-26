@@ -12,6 +12,26 @@ and experimentally compare adaptive scheduling against classic algorithms.
 
 ## Status
 
+**Phase 3 — feature-aware adaptive quantum selection: complete.**
+
+* Round Robin can now change its quantum mid-run (`adaptive_round_robin`).
+  A controller picks the quantum from features available at decision time:
+  submission-time features, or online observations of the schedule that
+  actually ran (only completed bursts are visible).
+* Protocol: candidates RR1/2/4/8; best fixed quantum and controller chosen
+  on train + validation only; controller frozen and committed before a
+  single evaluation on 300 held-out test workloads; paired bootstrap CIs,
+  Wilcoxon signed-rank tests, and Holm correction.
+* **Result:** the best fixed quantum is RR1. The frozen controller (online
+  decision tree) changed average turnaround by **−0.38% vs RR1** (95% CI
+  −0.75% to −0.04%, Wilcoxon p = 0.50, Holm p = 1). **This is not a
+  statistically supported improvement.** A per-workload oracle would gain
+  about 3%. Burst variability predicts the right quantum, but it is poorly
+  observable online.
+
+Details: [docs/phase3_adaptive_scheduling.md](docs/phase3_adaptive_scheduling.md)
+and [reports/phase3/summary.md](reports/phase3/summary.md).
+
 **Phase 2 — workload dataset, features, and offline classification: complete.**
 
 * Reproducible generator for CPU-bound, I/O-bound, and mixed workloads
@@ -43,8 +63,8 @@ Design, leakage rules, results, and limitations:
   averages; throughput; CPU utilization; context-switch count.
 * Pytest suite with hand-verified cases and seeded randomized invariant tests.
 
-**Not implemented yet:** adaptive scheduling, I/O-blocking simulation, the
-dashboard, and any validation against a real operating system.
+**Not implemented yet:** I/O-blocking simulation, context-switch overhead,
+the dashboard, and any validation against a real operating system.
 
 ## Architecture
 
@@ -57,9 +77,16 @@ src/schedx/
   features.py     feature catalog (availability A/B/C) and extraction  (Phase 2)
   ml.py           grouped split, pipelines, evaluation, persistence    (Phase 2)
   policy_eval.py  offline policy-value experiment                      (Phase 2)
-configs/phase2.json   dataset, split, model, and policy settings
-scripts/              demo, generate_dataset, train_evaluate, plot_results, predict
+  observation.py  what an online scheduler has observed by time t      (Phase 3)
+  adaptive_eval.py counterfactual candidate runs vs inference path     (Phase 3)
+  controller.py   feature -> quantum controller (simulator-independent)(Phase 3)
+  stats.py        paired bootstrap CIs, Wilcoxon, effect sizes, Holm   (Phase 3)
+  phase3.py       Phase 3 fit/select and test-stage pipeline           (Phase 3)
+configs/              phase2.json, phase3.json
+scripts/              demo, generate_dataset, train_evaluate, plot_results, predict,
+                      phase3_train, phase3_evaluate, phase3_plots
 reports/phase2/       generated metrics.json, summary.md, figures (committed)
+reports/phase3/       frozen controller, validation table, test results, figures (committed)
 artifacts/            generated dataset, models, predictions (not committed)
 tests/                pytest suite
 docs/                 architecture, Phase 2 design/results, data dictionary
@@ -145,6 +172,19 @@ python scripts/plot_results.py          # -> reports/phase2/figures/*.png
 python scripts/predict.py --seed 12345  # classify a newly generated workload
 ```
 
+## Reproducing Phase 3
+
+Requires the Phase 2 dataset and models (previous section). Then:
+
+```bash
+python scripts/phase3_train.py      # train+validation only -> artifacts/phase3/, reports/phase3/frozen_controller.json
+python scripts/phase3_evaluate.py   # frozen controllers, test workloads once -> reports/phase3/results.json, summary.md
+python scripts/phase3_plots.py      # -> reports/phase3/figures/*.png
+```
+
+`phase3_evaluate.py` refuses to run if `configs/phase3.json` or the dataset
+changed since the controllers were frozen.
+
 ## Limitations
 
 * The Phase 1 simulator schedules CPU bursts only: no I/O blocking, one
@@ -152,6 +192,8 @@ python scripts/predict.py --seed 12345  # classify a newly generated workload
   records I/O in its dataset but does not simulate it.
 * Phase 2 results are on synthetic workloads from one generator, one
   dataset seed, and one split; see `docs/phase2_ml.md` §8.
+* Phase 3 uses an open-loop CPU-only projection with free context switches
+  and decides once per workload; see `docs/phase3_adaptive_scheduling.md` §12.
 * Single CPU.
 * Context-switch overhead is counted but takes zero simulated time.
 * Integer time only.
@@ -163,7 +205,8 @@ python scripts/predict.py --seed 12345  # classify a newly generated workload
 1. ~~Scheduling core and metrics~~ (Phase 1)
 2. ~~Synthetic workload dataset, leakage-safe features, ML classifiers,
    offline evaluation, initial plots~~ (Phase 2)
-3. Adaptive scheduling: ML-guided policy selection and time-quantum choice,
-   ideally with an I/O-aware simulator
-4. Comparative experiments against fixed algorithms
+3. ~~Adaptive quantum selection with a leakage-safe, pre-specified
+   comparison against fixed quanta~~ (Phase 3; no supported improvement)
+4. Candidate next steps: censoring-aware online observation, periodic
+   re-decision, context-switch overhead, I/O-aware simulation
 5. Interactive dashboard (Streamlit)

@@ -16,6 +16,11 @@ of it; their design is in [`phase2_ml.md`](phase2_ml.md).
 | `schedx/features.py` | Phase 2: column availability catalog (A/B/C) and feature extraction. |
 | `schedx/ml.py` | Phase 2: grouped split, model pipelines, evaluation, persistence, inference. |
 | `schedx/policy_eval.py` | Phase 2: offline policy-value experiment (uses scheduler + metrics). |
+| `schedx/observation.py` | Phase 3: observation boundary at a decision tick (depends only on `models`). |
+| `schedx/adaptive_eval.py` | Phase 3: counterfactual candidate runs (training) vs the inference path. |
+| `schedx/controller.py` | Phase 3: feature → quantum controller with a feature whitelist and fallback; no simulator imports. |
+| `schedx/stats.py` | Phase 3: paired bootstrap CIs, Wilcoxon signed-rank, effect sizes, Holm. |
+| `schedx/phase3.py` | Phase 3: fit/select stage (train + validation) and test stage. |
 | `scripts/demo.py` | Runs every algorithm on a sample workload and prints a text Gantt chart. |
 
 Dependency direction: `metrics → models ← scheduler`; Phase 2 modules depend
@@ -102,6 +107,15 @@ better key.
 | `srtf(ws)` | `(remaining, arrival, index)` | yes | Equal remaining time does not preempt (earlier arrival wins). |
 | `round_robin(ws, quantum)` | enqueue order | by quantum | `quantum` must be a positive int. |
 | `priority(ws, preemptive=False)` | `(priority, arrival, index)` | optional | Non-preemptive by default; equal priority never preempts. |
+
+### Time-varying quantum (Phase 3)
+
+`adaptive_round_robin(ws, quantum_at)` is Round Robin whose quantum is
+`quantum_at(t)`, evaluated each time a process is dispatched at tick `t`. A
+slice already running when the quantum changes keeps the quantum it was
+dispatched with. With a constant function the timeline is identical to
+`round_robin` (tested on random workloads). `round_robin` itself is
+unchanged.
 
 ### Deterministic handling of simultaneous events
 
