@@ -9,6 +9,8 @@ the generator's intent.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import asdict, dataclass, field
 
 import numpy as np
@@ -245,3 +247,10 @@ def processes_from_frame(df: pd.DataFrame) -> dict[str, tuple[GeneratedProcess, 
 
 def config_dict(cfg: GeneratorConfig) -> dict:
     return {k: list(v) if isinstance(v, tuple) else v for k, v in asdict(cfg).items()}
+
+
+def dataset_version(cfg: dict) -> str:
+    """Short hash of the dataset + (normalized) generator config."""
+    gen = config_dict(GeneratorConfig.from_dict(cfg["generator"]))
+    blob = json.dumps({"dataset": cfg["dataset"], "generator": gen}, sort_keys=True)
+    return hashlib.sha256(blob.encode()).hexdigest()[:12]

@@ -1,0 +1,730 @@
+{
+  "dataset_version": "67da9d294be3",
+  "dataset_config": {
+    "dataset": {
+      "master_seed": 2026,
+      "n_workloads": 1500,
+      "horizons": [
+        1,
+        2,
+        3
+      ]
+    },
+    "generator": {
+      "process_count": [
+        4,
+        24
+      ],
+      "mean_interarrival": [
+        1.0,
+        12.0
+      ],
+      "burst_cv": [
+        0.3,
+        1.2
+      ],
+      "p_io_cpu_regime": 0.1,
+      "p_io_io_regime": 0.9,
+      "p_io_mixed_regime": [
+        0.3,
+        0.7
+      ],
+      "cpu_heavy_cpu_mean": [
+        6.0,
+        25.0
+      ],
+      "cpu_heavy_io_mean": [
+        2.0,
+        10.0
+      ],
+      "cpu_heavy_bursts": [
+        1,
+        6
+      ],
+      "io_heavy_cpu_mean": [
+        1.0,
+        5.0
+      ],
+      "io_heavy_io_mean": [
+        8.0,
+        40.0
+      ],
+      "io_heavy_bursts": [
+        3,
+        12
+      ],
+      "priority_max": 4
+    }
+  },
+  "split": {
+    "seed": 7,
+    "train": 0.6,
+    "validation": 0.2,
+    "test": 0.2,
+    "grouped_by": "workload_id",
+    "stratified_by": "workload_class",
+    "summary": {
+      "train": {
+        "workloads": 900,
+        "rows": 2700,
+        "class_counts": {
+          "cpu_bound": 290,
+          "mixed": 293,
+          "io_bound": 317
+        }
+      },
+      "validation": {
+        "workloads": 300,
+        "rows": 900,
+        "class_counts": {
+          "cpu_bound": 97,
+          "mixed": 98,
+          "io_bound": 105
+        }
+      },
+      "test": {
+        "workloads": 300,
+        "rows": 900,
+        "class_counts": {
+          "cpu_bound": 97,
+          "mixed": 98,
+          "io_bound": 105
+        }
+      }
+    }
+  },
+  "model_seed": 42,
+  "trained_on": "train+validation (hyperparameters chosen on validation)",
+  "library_versions": {
+    "python": "3.11.9",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.4.6",
+    "pandas": "3.1.0"
+  },
+  "main_experiment": {
+    "features": [
+      "n_processes",
+      "arrival_span",
+      "arrival_gap_mean",
+      "arrival_gap_std",
+      "arrival_rate",
+      "priority_mean",
+      "priority_std",
+      "horizon_k",
+      "obs_cpu_mean",
+      "obs_cpu_std",
+      "obs_cpu_min",
+      "obs_cpu_max",
+      "obs_cpu_median",
+      "obs_proc_cpu_mean_std",
+      "obs_io_mean",
+      "obs_io_std",
+      "obs_io_cpu_ratio",
+      "obs_frac_io_dominant",
+      "obs_io_per_proc",
+      "obs_frac_terminated"
+    ],
+    "categories": [
+      "A",
+      "B"
+    ],
+    "models": {
+      "logistic_regression": {
+        "estimator": "LogisticRegression",
+        "params": {
+          "C": 1.0
+        },
+        "grid": [
+          {
+            "params": {
+              "C": 0.1
+            },
+            "validation_macro_f1": 0.862421948565793
+          },
+          {
+            "params": {
+              "C": 1.0
+            },
+            "validation_macro_f1": 0.8692920117086155
+          },
+          {
+            "params": {
+              "C": 10.0
+            },
+            "validation_macro_f1": 0.8682355440123161
+          }
+        ],
+        "validation_macro_f1": 0.8692920117086155,
+        "fit_seconds": 0.15330549993086606,
+        "inference_us_per_row": 7.356666675251391,
+        "test": {
+          "n": 900,
+          "accuracy": 0.8755555555555555,
+          "macro_precision": 0.8744034730526021,
+          "macro_recall": 0.8744675877223743,
+          "macro_f1": 0.8744153628878649,
+          "per_class": {
+            "cpu_bound": {
+              "precision": 0.896551724137931,
+              "recall": 0.8934707903780069,
+              "f1": 0.8950086058519794,
+              "support": 291
+            },
+            "mixed": {
+              "precision": 0.8144329896907216,
+              "recall": 0.8061224489795918,
+              "f1": 0.8102564102564103,
+              "support": 294
+            },
+            "io_bound": {
+              "precision": 0.9122257053291536,
+              "recall": 0.9238095238095239,
+              "f1": 0.917981072555205,
+              "support": 315
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "cpu_bound",
+              "mixed",
+              "io_bound"
+            ],
+            "matrix": [
+              [
+                260,
+                30,
+                1
+              ],
+              [
+                30,
+                237,
+                27
+              ],
+              [
+                0,
+                24,
+                291
+              ]
+            ]
+          }
+        },
+        "test_accuracy_by_horizon": {
+          "1": 0.8,
+          "2": 0.9133333333333333,
+          "3": 0.9133333333333333
+        },
+        "feature_importance": null
+      },
+      "decision_tree": {
+        "estimator": "DecisionTreeClassifier",
+        "params": {
+          "max_depth": 8,
+          "min_samples_leaf": 1
+        },
+        "grid": [
+          {
+            "params": {
+              "max_depth": 3,
+              "min_samples_leaf": 1
+            },
+            "validation_macro_f1": 0.801453495916847
+          },
+          {
+            "params": {
+              "max_depth": 3,
+              "min_samples_leaf": 5
+            },
+            "validation_macro_f1": 0.801453495916847
+          },
+          {
+            "params": {
+              "max_depth": 5,
+              "min_samples_leaf": 1
+            },
+            "validation_macro_f1": 0.8093775277444455
+          },
+          {
+            "params": {
+              "max_depth": 5,
+              "min_samples_leaf": 5
+            },
+            "validation_macro_f1": 0.8113386829571055
+          },
+          {
+            "params": {
+              "max_depth": 8,
+              "min_samples_leaf": 1
+            },
+            "validation_macro_f1": 0.8128659209281076
+          },
+          {
+            "params": {
+              "max_depth": 8,
+              "min_samples_leaf": 5
+            },
+            "validation_macro_f1": 0.8091958380989763
+          },
+          {
+            "params": {
+              "max_depth": null,
+              "min_samples_leaf": 1
+            },
+            "validation_macro_f1": 0.7962361749628236
+          },
+          {
+            "params": {
+              "max_depth": null,
+              "min_samples_leaf": 5
+            },
+            "validation_macro_f1": 0.7980670325455573
+          }
+        ],
+        "validation_macro_f1": 0.8128659209281076,
+        "fit_seconds": 0.05999999993946403,
+        "inference_us_per_row": 5.803222302347422,
+        "test": {
+          "n": 900,
+          "accuracy": 0.8644444444444445,
+          "macro_precision": 0.863613261534133,
+          "macro_recall": 0.8640079170270628,
+          "macro_f1": 0.8636293135928521,
+          "per_class": {
+            "cpu_bound": {
+              "precision": 0.8741721854304636,
+              "recall": 0.9072164948453608,
+              "f1": 0.8903878583473862,
+              "support": 291
+            },
+            "mixed": {
+              "precision": 0.7986348122866894,
+              "recall": 0.7959183673469388,
+              "f1": 0.797274275979557,
+              "support": 294
+            },
+            "io_bound": {
+              "precision": 0.9180327868852459,
+              "recall": 0.8888888888888888,
+              "f1": 0.9032258064516129,
+              "support": 315
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "cpu_bound",
+              "mixed",
+              "io_bound"
+            ],
+            "matrix": [
+              [
+                264,
+                26,
+                1
+              ],
+              [
+                36,
+                234,
+                24
+              ],
+              [
+                2,
+                33,
+                280
+              ]
+            ]
+          }
+        },
+        "test_accuracy_by_horizon": {
+          "1": 0.7866666666666666,
+          "2": 0.8933333333333333,
+          "3": 0.9133333333333333
+        },
+        "feature_importance": {
+          "obs_cpu_mean": 0.5191392322913387,
+          "obs_cpu_median": 0.20266710493781195,
+          "obs_frac_io_dominant": 0.09891774144309547,
+          "obs_frac_terminated": 0.0407058521668899,
+          "obs_io_per_proc": 0.037270511376555696,
+          "obs_cpu_max": 0.017544614029161448,
+          "priority_std": 0.011044619114369306,
+          "priority_mean": 0.010193486003396025,
+          "n_processes": 0.01006083097421843,
+          "obs_proc_cpu_mean_std": 0.0086484676337722,
+          "obs_io_mean": 0.006056940152877269,
+          "obs_io_cpu_ratio": 0.005534905200130515,
+          "arrival_span": 0.005394586745341538,
+          "arrival_rate": 0.005347427928273718,
+          "obs_io_std": 0.004739804591169381,
+          "obs_cpu_std": 0.004616792599882088,
+          "arrival_gap_std": 0.004121482486847401,
+          "arrival_gap_mean": 0.0039050841361570297,
+          "obs_cpu_min": 0.0031523744877835734,
+          "missingindicator_obs_io_mean": 0.0006754931533851307,
+          "horizon_k": 0.0002626485475431831,
+          "missingindicator_obs_io_std": 0.0,
+          "missingindicator_obs_io_cpu_ratio": 0.0,
+          "missingindicator_obs_frac_io_dominant": 0.0
+        }
+      },
+      "random_forest": {
+        "estimator": "RandomForestClassifier",
+        "params": {
+          "max_depth": 8,
+          "min_samples_leaf": 3
+        },
+        "grid": [
+          {
+            "params": {
+              "max_depth": null,
+              "min_samples_leaf": 1
+            },
+            "validation_macro_f1": 0.8513737350013676
+          },
+          {
+            "params": {
+              "max_depth": null,
+              "min_samples_leaf": 3
+            },
+            "validation_macro_f1": 0.8554026285248953
+          },
+          {
+            "params": {
+              "max_depth": 8,
+              "min_samples_leaf": 1
+            },
+            "validation_macro_f1": 0.8502608966078498
+          },
+          {
+            "params": {
+              "max_depth": 8,
+              "min_samples_leaf": 3
+            },
+            "validation_macro_f1": 0.8580955647347075
+          }
+        ],
+        "validation_macro_f1": 0.8580955647347075,
+        "fit_seconds": 1.5290358000202104,
+        "inference_us_per_row": 37.47644433234301,
+        "test": {
+          "n": 900,
+          "accuracy": 0.8922222222222222,
+          "macro_precision": 0.8914889739383999,
+          "macro_recall": 0.8916317959027826,
+          "macro_f1": 0.891525630105209,
+          "per_class": {
+            "cpu_bound": {
+              "precision": 0.9050847457627119,
+              "recall": 0.9175257731958762,
+              "f1": 0.9112627986348123,
+              "support": 291
+            },
+            "mixed": {
+              "precision": 0.8338983050847457,
+              "recall": 0.8367346938775511,
+              "f1": 0.8353140916808149,
+              "support": 294
+            },
+            "io_bound": {
+              "precision": 0.9354838709677419,
+              "recall": 0.9206349206349206,
+              "f1": 0.928,
+              "support": 315
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "cpu_bound",
+              "mixed",
+              "io_bound"
+            ],
+            "matrix": [
+              [
+                267,
+                24,
+                0
+              ],
+              [
+                28,
+                246,
+                20
+              ],
+              [
+                0,
+                25,
+                290
+              ]
+            ]
+          }
+        },
+        "test_accuracy_by_horizon": {
+          "1": 0.8233333333333334,
+          "2": 0.92,
+          "3": 0.9333333333333333
+        },
+        "feature_importance": {
+          "obs_cpu_mean": 0.22647397480883363,
+          "obs_cpu_median": 0.1648322395602036,
+          "obs_frac_io_dominant": 0.12576793341760914,
+          "obs_io_cpu_ratio": 0.07886953034681238,
+          "obs_cpu_std": 0.0786272473416611,
+          "obs_proc_cpu_mean_std": 0.05835446985497579,
+          "obs_frac_terminated": 0.053075147302611994,
+          "obs_cpu_max": 0.041920662898092216,
+          "obs_io_mean": 0.035232443832278595,
+          "obs_io_std": 0.023410203234954706,
+          "obs_io_per_proc": 0.018613965248155243,
+          "obs_cpu_min": 0.014889765258355387,
+          "n_processes": 0.00911569737986519,
+          "priority_std": 0.008802848375045143,
+          "arrival_span": 0.0075808982666007215,
+          "arrival_gap_mean": 0.007073848681890318,
+          "priority_mean": 0.007022551778706705,
+          "arrival_rate": 0.0066530796498519736,
+          "arrival_gap_std": 0.006606678310788939,
+          "missingindicator_obs_frac_io_dominant": 0.0060198507940317295,
+          "missingindicator_obs_io_mean": 0.005816269972907774,
+          "missingindicator_obs_io_std": 0.005484620053432737,
+          "horizon_k": 0.0051800482417019246,
+          "missingindicator_obs_io_cpu_ratio": 0.004576025390632947
+        }
+      }
+    },
+    "selected_model": "logistic_regression"
+  },
+  "retrospective_experiment": {
+    "features": [
+      "n_processes",
+      "arrival_span",
+      "arrival_gap_mean",
+      "arrival_gap_std",
+      "arrival_rate",
+      "priority_mean",
+      "priority_std",
+      "horizon_k",
+      "obs_cpu_mean",
+      "obs_cpu_std",
+      "obs_cpu_min",
+      "obs_cpu_max",
+      "obs_cpu_median",
+      "obs_proc_cpu_mean_std",
+      "obs_io_mean",
+      "obs_io_std",
+      "obs_io_cpu_ratio",
+      "obs_frac_io_dominant",
+      "obs_io_per_proc",
+      "obs_frac_terminated",
+      "total_cpu_mean",
+      "total_io_mean",
+      "lifetime_io_fraction",
+      "bursts_per_proc_mean",
+      "cpu_demand_per_tick"
+    ],
+    "categories": [
+      "A",
+      "B",
+      "C"
+    ],
+    "models": {
+      "random_forest": {
+        "estimator": "RandomForestClassifier",
+        "params": {
+          "max_depth": 8,
+          "min_samples_leaf": 3
+        },
+        "grid": [
+          {
+            "params": {
+              "max_depth": null,
+              "min_samples_leaf": 1
+            },
+            "validation_macro_f1": 0.9176631277167159
+          },
+          {
+            "params": {
+              "max_depth": null,
+              "min_samples_leaf": 3
+            },
+            "validation_macro_f1": 0.9288512823274228
+          },
+          {
+            "params": {
+              "max_depth": 8,
+              "min_samples_leaf": 1
+            },
+            "validation_macro_f1": 0.9280398800222295
+          },
+          {
+            "params": {
+              "max_depth": 8,
+              "min_samples_leaf": 3
+            },
+            "validation_macro_f1": 0.9301850516167013
+          }
+        ],
+        "validation_macro_f1": 0.9301850516167013,
+        "fit_seconds": 1.9122126000002027,
+        "inference_us_per_row": 44.5755555604895,
+        "test": {
+          "n": 900,
+          "accuracy": 0.8988888888888888,
+          "macro_precision": 0.8985664149032289,
+          "macro_recall": 0.8981734732839298,
+          "macro_f1": 0.8970810489704791,
+          "per_class": {
+            "cpu_bound": {
+              "precision": 0.860248447204969,
+              "recall": 0.9518900343642611,
+              "f1": 0.9037520391517129,
+              "support": 291
+            },
+            "mixed": {
+              "precision": 0.8745387453874539,
+              "recall": 0.8061224489795918,
+              "f1": 0.8389380530973451,
+              "support": 294
+            },
+            "io_bound": {
+              "precision": 0.9609120521172638,
+              "recall": 0.9365079365079365,
+              "f1": 0.9485530546623794,
+              "support": 315
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "cpu_bound",
+              "mixed",
+              "io_bound"
+            ],
+            "matrix": [
+              [
+                277,
+                14,
+                0
+              ],
+              [
+                45,
+                237,
+                12
+              ],
+              [
+                0,
+                20,
+                295
+              ]
+            ]
+          }
+        },
+        "test_accuracy_by_horizon": {
+          "1": 0.8933333333333333,
+          "2": 0.9033333333333333,
+          "3": 0.9
+        },
+        "feature_importance": {
+          "lifetime_io_fraction": 0.2380744103529567,
+          "total_io_mean": 0.14879500108784582,
+          "obs_cpu_mean": 0.12240798456046759,
+          "bursts_per_proc_mean": 0.12133669895009923,
+          "obs_cpu_median": 0.07711831031022474,
+          "total_cpu_mean": 0.05347636534187537,
+          "obs_frac_io_dominant": 0.047745208073390284,
+          "obs_cpu_std": 0.04586638173256061,
+          "obs_proc_cpu_mean_std": 0.022263576916843445,
+          "obs_io_cpu_ratio": 0.019125833590918524,
+          "obs_frac_terminated": 0.01463016572440921,
+          "obs_io_mean": 0.012043411416145892,
+          "obs_cpu_max": 0.011798490608197822,
+          "n_processes": 0.0067339273351640465,
+          "obs_io_std": 0.006452928906035637,
+          "priority_std": 0.00634565874324983,
+          "priority_mean": 0.005597718155667303,
+          "arrival_span": 0.005516003891662014,
+          "cpu_demand_per_tick": 0.005262628776685033,
+          "obs_io_per_proc": 0.004902336808598604,
+          "obs_cpu_min": 0.004708704120507332,
+          "arrival_gap_mean": 0.004648016537493108,
+          "arrival_rate": 0.004636831071031103,
+          "arrival_gap_std": 0.004543433758713416,
+          "missingindicator_obs_io_std": 0.0014778213507986757,
+          "horizon_k": 0.0013388355743962198,
+          "missingindicator_obs_io_cpu_ratio": 0.00123451727492409,
+          "missingindicator_obs_io_mean": 0.0012218578404629647,
+          "missingindicator_obs_frac_io_dominant": 0.0006969411886755225
+        }
+      }
+    },
+    "selected_model": "random_forest"
+  },
+  "policy_experiment": {
+    "projection": "CPU-only burst-trace projection (open loop, no I/O blocking simulated)",
+    "objective": "mean job turnaround, as regret vs best candidate per workload",
+    "candidates": [
+      "FCFS",
+      "RR2",
+      "RR4",
+      "RR8",
+      "RR16"
+    ],
+    "fixed_baseline": "RR2",
+    "class_policy_map": {
+      "cpu_bound": "FCFS",
+      "mixed": "RR2",
+      "io_bound": "RR4"
+    },
+    "map_source": "learned on train+validation",
+    "prediction_model": "logistic_regression",
+    "test": {
+      "n_workloads": 300,
+      "fixed_baseline": {
+        "mean_regret": 1.056891255897888
+      },
+      "true_class_map": {
+        "mean_regret": 1.0493119219412774,
+        "delta_vs_fixed": -0.007579333956610756,
+        "delta_ci95": [
+          -0.02372925141649582,
+          0.008455953287442008
+        ],
+        "differs_from_fixed": 0.6733333333333333
+      },
+      "predicted_class_map_by_horizon": {
+        "1": {
+          "mean_regret": 1.0433595942970544,
+          "delta_vs_fixed": -0.013531661600833952,
+          "delta_ci95": [
+            -0.02839550051859399,
+            0.0015953823422734266
+          ],
+          "differs_from_fixed": 0.6833333333333333
+        },
+        "2": {
+          "mean_regret": 1.047567156822403,
+          "delta_vs_fixed": -0.009324099075485242,
+          "delta_ci95": [
+            -0.025704250564006176,
+            0.006541489037469254
+          ],
+          "differs_from_fixed": 0.66
+        },
+        "3": {
+          "mean_regret": 1.0510863522558085,
+          "delta_vs_fixed": -0.005804903642079747,
+          "delta_ci95": [
+            -0.022251156963266485,
+            0.01156374209934485
+          ],
+          "differs_from_fixed": 0.6866666666666666
+        }
+      },
+      "oracle": {
+        "mean_regret": 1.0
+      },
+      "candidate_mean_regret": {
+        "FCFS": 1.211346352345996,
+        "RR2": 1.056891255897888,
+        "RR4": 1.0640163532040485,
+        "RR8": 1.0919636608606007,
+        "RR16": 1.142548529339321
+      }
+    }
+  }
+}

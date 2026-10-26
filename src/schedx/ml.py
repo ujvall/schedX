@@ -217,7 +217,7 @@ def save_model(model: Pipeline, metadata: dict, directory: Path, name: str) -> P
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / f"{name}.joblib"
     joblib.dump(model, path)
-    path.with_suffix(".json").write_text(json.dumps(metadata, indent=2))
+    path.with_suffix(".json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     return path
 
 
@@ -226,7 +226,7 @@ def load_model(path: Path) -> tuple[Pipeline, dict]:
     joblib (pickle) can execute code from untrusted files."""
     path = Path(path)
     model = joblib.load(path)
-    meta = json.loads(path.with_suffix(".json").read_text())
+    meta = json.loads(path.with_suffix(".json").read_text(encoding="utf-8"))
     if list(model.feature_names_in_) != list(meta["features"]):
         raise ValueError(f"{path}: model features do not match its metadata")
     return model, meta
