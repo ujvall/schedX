@@ -35,7 +35,7 @@ def _simulate(
     processes: Iterable[Process],
     key: Key,
     preemptive: bool,
-    quantum: int | None = None,
+    quantum: int | Callable[[int], int] | None = None,
 ) -> Schedule:
     procs = validate_processes(processes)
     index = {p.pid: i for i, p in enumerate(procs)}
@@ -76,7 +76,11 @@ def _simulate(
 
         run = remaining[pid]
         if quantum is not None:
-            run = min(run, quantum)
+            # A callable quantum is evaluated at dispatch time ``t``.
+            q = quantum(t) if callable(quantum) else quantum
+            if not _is_int(q) or q <= 0:
+                raise ValueError(f"quantum at t={t} must be a positive int, got {q!r}")
+            run = min(run, q)
         if preemptive and nxt < len(arrivals):
             # Stop at the next arrival so the scheduler can re-evaluate.
             run = min(run, arrivals[nxt].arrival - t)
@@ -129,3 +133,18 @@ def priority(processes: Iterable[Process], preemptive: bool = False) -> Schedule
     """
     name = "Priority(preemptive)" if preemptive else "Priority"
     return _simulate(name, processes, lambda p, rem, seq, i: (p.priority, p.arrival, i), preemptive=preemptive)
+
+
+def adaptive_round_robin(
+    processes: Iterable[Process], quantum_at: Callable[[int], int], name: str = "RR(adaptive)"
+) -> Schedule:
+    """Round Robin whose quantum may change over time (Phase 3).
+
+    ``quantum_at(t)`` is called whenever a process is dispatched at tick
+    ``t`` and must return a positive int. A slice already running when the
+    quantum changes keeps the quantum it was dispatched with. With a
+    constant function this is identical to ``round_robin``.
+    """
+    if not callable(quantum_at):
+        raise TypeError("quantum_at must be callable")
+    return _simulate(name, processes, lambda p, rem, seq, i: (seq,), preemptive=False, quantum=quantum_at)

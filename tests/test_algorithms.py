@@ -186,3 +186,39 @@ def test_empty_workload(algo):
 def test_single_process_late_arrival(algo):
     s = algo([P("A", 3, 2)])
     assert segs(s) == [(0, 3, None), (3, 5, "A")]
+
+
+# --- Time-varying quantum (Phase 3) ---------------------------------------------------
+
+from schedx import adaptive_round_robin  # noqa: E402
+
+
+@pytest.mark.parametrize("q", [1, 2, 3, 5])
+def test_adaptive_rr_with_constant_quantum_equals_rr(q):
+    import random
+
+    for seed in range(50):
+        rng = random.Random(seed)
+        w = [P(f"P{i}", rng.randint(0, 12), rng.randint(1, 9)) for i in range(rng.randint(1, 7))]
+        assert segs(adaptive_round_robin(w, lambda t: q)) == segs(round_robin(w, q))
+
+
+def test_adaptive_rr_switches_quantum_at_dispatch_time():
+    w = [P("A", 0, 6), P("B", 0, 6)]
+    # q=1 for dispatches before t=2, then q=3. The dispatch at t=1 still uses q=1.
+    s = adaptive_round_robin(w, lambda t: 1 if t < 2 else 3)
+    assert segs(s) == [(0, 1, "A"), (1, 2, "B"), (2, 5, "A"), (5, 8, "B"), (8, 10, "A"), (10, 12, "B")]
+
+
+def test_adaptive_rr_slice_straddling_switch_keeps_old_quantum():
+    s = adaptive_round_robin([P("A", 0, 9), P("B", 0, 9)], lambda t: 4 if t < 5 else 1)
+    # B is dispatched at t=4 (< 5) with q=4 and runs past the switch to t=8.
+    assert segs(s)[:3] == [(0, 4, "A"), (4, 8, "B"), (8, 9, "A")]
+
+
+@pytest.mark.parametrize("bad", [0, -1, 1.5, None, True])
+def test_adaptive_rr_rejects_invalid_quantum(bad):
+    with pytest.raises(ValueError):
+        adaptive_round_robin([P("A", 0, 3)], lambda t: bad)
+    with pytest.raises(TypeError):
+        adaptive_round_robin([P("A", 0, 3)], 2)

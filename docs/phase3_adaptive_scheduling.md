@@ -1,0 +1,202 @@
+# Phase 3 — Feature-Aware Adaptive Quantum Selection
+
+Phase 3 asks whether workload features can choose a Round Robin quantum
+better than a fixed quantum. It does **not** assume they can. All results
+are offline simulations on synthetic workloads in a CPU-only simulator; no
+OS-level performance is measured.
+
+## 1. Audit of Phase 2 (starting point)
+
+* **Workloads → rows.** `workloads.csv` has one row per workload,
+  `processes.csv` one row per process (full CPU/I/O traces), and
+  `features.csv` one row per (workload, horizon k ∈ {1, 2, 3}), so three
+  correlated rows per workload.
+* **Generation.** Per workload: a regime, a process count (4–24), exponential
+  arrivals with a workload-specific mean gap, a per-process CPU-heavy or
+  I/O-heavy draw, and Gamma-distributed integer bursts (`docs/phase2_ml.md` §1).
+  Labels come from the realized traces.
+* **Feature availability.** A (submission: count, arrival times,
+  priorities) is deployable under a batch-submission assumption. B
+  (first k bursts of *every* process) is optimistic: it includes bursts of
+  processes that have not arrived yet and ignores when an observation becomes
+  available. C (lifetime totals) is retrospective.
+* **Simulated jobs.** `policy_eval.burst_jobs` turns every CPU burst into an
+  independent job released at its contention-free time (arrival + earlier
+  CPU bursts + earlier I/O waits). This open-loop projection is CPU-only;
+  real I/O completions would be delayed by contention. Phase 3 keeps it so
+  results stay comparable with Phase 2.
+* **RR2 baseline.** Chosen in Phase 2 as the lowest mean regret among
+  FCFS/RR2/RR4/RR8/RR16 over train + validation workloads.
+* **Phase 2 class map.** `cpu_bound → FCFS`, `mixed → RR2`,
+  `io_bound → RR4`, learned on train + validation true classes.
+
+No Phase 2 schema, dataset, or result is changed. The Phase 1 engine gained
+one backward-compatible feature: Round Robin accepts a time-varying quantum
+(`adaptive_round_robin`). With a constant quantum it reproduces
+`round_robin` exactly (tested on random workloads).
+
+## 2. Hypothesis
+
+H1: a controller that chooses the RR quantum per workload from deployable
+features yields lower average job turnaround than the best fixed quantum
+chosen on the same training and validation data.
+
+H0: no difference. Phase 3 reports whichever the data supports.
+
+## 3. Objective
+
+**Primary: average job turnaround** (mean over jobs of completion − release),
+compared per workload as a ratio to the baseline.
+
+Why turnaround and not response time: in Round Robin, a smaller quantum
+almost always gives an earlier first dispatch, so response time is
+essentially minimized by the smallest quantum and leaves little to decide.
+Turnaround has a real trade-off: small quanta help short jobs stuck behind
+long ones, large quanta avoid stretching out jobs of similar length. On
+train + validation workloads the per-workload winner is split mainly between
+RR1 and RR8. Turnaround is also the Phase 2 objective.
+
+**Secondary outcomes** (reported, not optimized): average waiting time,
+average response time, throughput, CPU utilization, context switches. No
+composite score is used. Every candidate is work-conserving on the same jobs,
+so throughput and CPU utilization are identical across candidates by
+construction; they are still reported.
+
+**Switching cost.** The simulator treats context switches as free. No
+overhead value is invented. Context-switch counts are reported per method so
+that their direction is visible. Smaller quanta cause more switches, so a
+real per-switch cost would penalize small quanta.
+
+## 4. Candidates and baselines
+
+* Controller candidates: RR with quantum ∈ {1, 2, 4, 8} (integer ticks,
+  configurable in `configs/phase3.json`).
+* **Fixed RR2**: the Phase 2 reference baseline.
+* **Best fixed quantum** (`q0`): the candidate with the lowest mean log
+  regret, `mean(log(T_q / min_q' T_q'))`, over train + validation workloads.
+  Ties go to the smaller quantum. This is the **primary baseline** and also the
+  controller's default/fallback quantum.
+* **Phase 2 class map (predicted)**: the frozen Phase 2 map applied to the
+  class predicted by the frozen Phase 2 Logistic Regression model at
+  horizon k = 1. It is labelled as relying on Phase 2's optimistic B features.
+* **Phase 2 class map (true)**: same map with the true class. **Diagnostic
+  only, not deployable.**
+* **Oracles** (not deployable): the best fixed candidate per workload, and the
+  best switch target per workload for the online controller. They know every
+  candidate's outcome.
+
+## 5. Feature availability and observation model
+
+The controller accepts only two kinds of input, enforced in code
+(`controller.ALLOWED_FEATURES`; anything else raises):
+
+* **A — submission:** the Phase 2 pre-execution features (process count,
+  arrival span/gaps/rate, priority mean/std). They assume batch submission:
+  the job list is known up front, the bursts are not.
+* **O — online observation** (`schedx/observation.py`): computed from the
+  schedule that *actually ran* up to the decision tick `t`: jobs released by
+  `t`, CPU received so far, burst lengths of jobs that have **completed**,
+  busy time, context switches, and the fraction of submitted processes that
+  have arrived. Unfinished and unreleased bursts are never exposed. Under
+  Round Robin (non-clairvoyant), the schedule before `t` does not depend on
+  them (tested by making unfinished bursts longer).
+
+Phase 2 B features, C features, labels, and generator parameters are never
+controller inputs.
+
+**Two decision regimes:**
+
+* **Submission controller:** decides the quantum once at t = 0 from A
+  features.
+* **Online controller:** runs `q0` and, when the m-th job completes, builds
+  the observation, decides once, and runs the chosen quantum for every later
+  dispatch. A slice already running keeps its quantum. Jobs released later
+  are scheduled normally; they simply were not part of the observation. If a
+  workload has ≤ m jobs, no decision is made and `q0` is used throughout
+  (logged as fallback). `m ∈ {5, 10, 20}` is chosen on validation.
+
+## 6. Training targets (counterfactual evaluation)
+
+For each training workload the simulator runs every candidate. This is
+training-time counterfactual evaluation and is kept separate from inference:
+
+* Submission regime: outcome of each fixed RR(q) run.
+* Online regime: outcome of "q0 until t, then q" for each candidate q.
+
+Targets:
+
+* **Best-candidate label** for classifiers: the q with the lowest average
+  turnaround. Exact ties are broken deterministically: prefer `q0`, then the
+  smaller quantum.
+* **Log-regret vector** for the regressor: `log(T_q / min_q' T_q')` for every
+  candidate.
+
+Online-regime workloads with no decision point are excluded from training,
+since every candidate gives the same outcome.
+
+## 7. Decision models
+
+Kept simple and interpretable; no reinforcement learning or neural networks.
+
+| family | model | prediction → decision |
+|---|---|---|
+| `constant` | always `q0` | — |
+| `tree_classifier` | `DecisionTreeClassifier` on the best-candidate label | predicted quantum |
+| `logistic_classifier` | `LogisticRegression` (standardized) on the label | predicted quantum |
+| `regret_regressor` | multi-output `DecisionTreeRegressor` on the log-regret vector | argmin of predicted regret (tie order as above) |
+
+All pipelines impute missing values (median plus missing indicators) fitted
+on training rows only. **Fallback:** if a model returns a quantum outside
+the candidate set or a non-finite regret vector, the controller uses `q0`
+and records the reason. Missing feature columns are a schema error and raise.
+
+## 8. Leakage prevention and protocol
+
+1. Reuse the Phase 2 grouped split (`grouped_split`, seed 7):
+   900 / 300 / 300 workloads. Split by workload id, stratified by class.
+2. `scripts/phase3_train.py` loads **only** train + validation traces.
+   Test traces are never passed to it (asserted).
+3. Choose `q0` on train + validation.
+4. Fit each (regime, m, family, hyperparameters) configuration on **train**.
+   Score it on **validation** by `mean(log(T_chosen / T_q0))` (lower is
+   better). Pick the configuration with the lowest score; ties go to the
+   simpler configuration (constant < submission < online with smaller m).
+   The best configuration within each regime is also frozen.
+5. Freeze: save the controllers (`artifacts/phase3/controllers.joblib`) and
+   `reports/phase3/frozen_controller.json` (configuration, dataset version,
+   config hash, validation table). No refit after selection.
+6. `scripts/phase3_evaluate.py` loads the frozen file, refuses to run if the
+   config or dataset has changed, and evaluates every method once on the
+   300 test workloads under identical conditions.
+
+## 9. Statistical methodology
+
+* **Unit:** the workload. All methods run on the same 300 test workloads,
+  so comparisons are paired.
+* **Per-workload effect:** `log(T_method / T_baseline)`, which is
+  scale-free. Workloads range from tens to thousands of ticks, and raw
+  differences would be dominated by the largest workloads. Raw differences in
+  ticks are reported too.
+* **Reported per comparison:** mean and median of both methods; mean and
+  median absolute difference; geometric-mean relative change
+  `exp(mean log ratio) − 1`; mean relative change; share of workloads
+  better / equal / worse.
+* **95% CIs:** paired percentile bootstrap that resamples workloads with
+  replacement (10,000 resamples, fixed seed), for the mean log ratio
+  (reported as relative change) and the mean absolute difference. This
+  assumes workloads are independent draws from the generator, which holds by
+  construction (independent seeds).
+* **Test:** two-sided Wilcoxon signed-rank test on log ratios (`pratt`
+  handling of zero differences, which are common when two methods pick the
+  same quantum). It makes no normality assumption.
+* **Effect sizes:** matched-pairs rank-biserial correlation, and Cohen's dz
+  on log ratios.
+* **Multiplicity:** Holm–Bonferroni across the pre-specified deployable
+  comparisons. **Primary comparison (pre-specified): selected adaptive
+  controller vs best fixed quantum.**
+* **Breakdowns:** by true workload class (reporting only), process-count
+  tercile, and burst-variability (`burst_cv`) tercile.
+
+The test set is evaluated once with the frozen strategy. If the result is
+inconclusive it is reported as inconclusive; there is no re-tuning against
+test.
