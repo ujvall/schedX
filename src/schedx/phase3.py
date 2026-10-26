@@ -268,6 +268,27 @@ def test_stage(
     return pd.DataFrame(rows)
 
 
+def sensitivity(method: pd.Series, baseline: pd.Series) -> dict:
+    """Post-hoc robustness checks for the primary comparison. Added after the
+    test evaluation to explain why the pre-specified Pratt Wilcoxon test and
+    the bootstrap CI disagree; they do not replace the pre-specified test."""
+    from scipy.stats import binomtest, wilcoxon
+
+    lr = np.log(method / baseline)
+    nz = lr[lr != 0]
+    better, worse = int((nz < 0).sum()), int((nz > 0).sum())
+    return {
+        "note": "post hoc; does not replace the pre-specified Wilcoxon (pratt) test",
+        "n_changed": int(len(nz)),
+        "n_better": better,
+        "n_worse": worse,
+        "sum_log_gain_better": float(nz[nz < 0].sum()),
+        "sum_log_loss_worse": float(nz[nz > 0].sum()),
+        "wilcoxon_nonzero_only_p": float(wilcoxon(nz).pvalue) if len(nz) else 1.0,
+        "sign_test_p": float(binomtest(better, len(nz)).pvalue) if len(nz) else 1.0,
+    }
+
+
 def _pivot(long: pd.DataFrame, metric: str) -> pd.DataFrame:
     return long.pivot(index="workload_id", columns="method", values=metric)
 
@@ -328,6 +349,7 @@ def analyze(long: pd.DataFrame, info: pd.DataFrame, cfg3: dict) -> dict:
     return {
         "n_test_workloads": int(len(T)),
         "primary": {"comparison": "adaptive_selected vs best_fixed", **family["adaptive_selected vs best_fixed"]},
+        "primary_sensitivity_post_hoc": sensitivity(T["adaptive_selected"], T["best_fixed"]),
         "deployable_comparisons": family,
         "reference_comparisons": reference,
         "oracle_gap_closed": closed,
