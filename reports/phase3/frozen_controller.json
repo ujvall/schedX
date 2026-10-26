@@ -1,0 +1,260 @@
+{
+  "frozen": true,
+  "config_hash": "ae9db57acecd",
+  "dataset_version": "67da9d294be3",
+  "phase3_config": {
+    "candidates": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "phase2_baseline_quantum": 2,
+    "decision_after_completions": [
+      5,
+      10,
+      20
+    ],
+    "phase2_class_map_horizon": 1,
+    "seed": 42,
+    "grids": {
+      "tree_classifier": [
+        {
+          "max_depth": 2,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 2,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 3,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 3,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 4,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 4,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 6,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 6,
+          "min_samples_leaf": 5
+        }
+      ],
+      "logistic_classifier": [
+        {
+          "C": 0.1
+        },
+        {
+          "C": 1.0
+        },
+        {
+          "C": 10.0
+        }
+      ],
+      "regret_regressor": [
+        {
+          "max_depth": 2,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 2,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 3,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 3,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 4,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 4,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 6,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 6,
+          "min_samples_leaf": 5
+        }
+      ]
+    },
+    "bootstrap": {
+      "n": 10000,
+      "seed": 123
+    }
+  },
+  "split": {
+    "train_workloads": 900,
+    "validation_workloads": 300,
+    "test_workloads": 300,
+    "test_workloads_loaded_in_fit_stage": false
+  },
+  "default_quantum_q0": 1,
+  "fixed_mean_log_regret_train_val": {
+    "1": 0.031225652462339,
+    "2": 0.033543503455220565,
+    "4": 0.0393628639167901,
+    "8": 0.06379238712418099
+  },
+  "online_no_decision_share": {
+    "5": {
+      "train": 0.0,
+      "validation": 0.0
+    },
+    "10": {
+      "train": 0.0022222222222222222,
+      "validation": 0.0033333333333333335
+    },
+    "20": {
+      "train": 0.04111111111111111,
+      "validation": 0.03666666666666667
+    }
+  },
+  "validation_criterion": "mean over validation workloads of log(T_chosen / T_q0), lower is better",
+  "controllers": {
+    "selected": {
+      "regime": "online",
+      "family": "tree_classifier",
+      "params": {
+        "max_depth": 3,
+        "min_samples_leaf": 20
+      },
+      "after_completions": 20,
+      "default": 1,
+      "candidates": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "features": [
+        "n_processes",
+        "arrival_span",
+        "arrival_gap_mean",
+        "arrival_gap_std",
+        "arrival_rate",
+        "priority_mean",
+        "priority_std",
+        "obs_t_decision",
+        "obs_jobs_released",
+        "obs_jobs_completed",
+        "obs_completed_burst_mean",
+        "obs_completed_burst_median",
+        "obs_completed_burst_std",
+        "obs_completed_burst_cv",
+        "obs_completed_burst_max",
+        "obs_pending_jobs",
+        "obs_pending_attained_mean",
+        "obs_busy_fraction",
+        "obs_release_rate",
+        "obs_switch_rate",
+        "obs_procs_arrived_frac"
+      ],
+      "label": "online/tree_classifier, m=20 {'max_depth': 3, 'min_samples_leaf': 20}",
+      "rules": "|--- obs_completed_burst_median <= 1.750\n|   |--- obs_pending_jobs <= 20.500\n|   |   |--- class: 1\n|   |--- obs_pending_jobs >  20.500\n|   |   |--- n_processes <= 17.500\n|   |   |   |--- class: 1\n|   |   |--- n_processes >  17.500\n|   |   |   |--- class: 1\n|--- obs_completed_burst_median >  1.750\n|   |--- obs_completed_burst_cv <= 0.707\n|   |   |--- obs_pending_attained_mean <= 1.275\n|   |   |   |--- class: 8\n|   |   |--- obs_pending_attained_mean >  1.275\n|   |   |   |--- class: 1\n|   |--- obs_completed_burst_cv >  0.707\n|   |   |--- obs_release_rate <= 0.214\n|   |   |   |--- class: 1\n|   |   |--- obs_release_rate >  0.214\n|   |   |   |--- class: 1\n"
+    },
+    "best_submission": {
+      "regime": "submission",
+      "family": "regret_regressor",
+      "params": {
+        "max_depth": 2,
+        "min_samples_leaf": 5
+      },
+      "after_completions": null,
+      "default": 1,
+      "candidates": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "features": [
+        "n_processes",
+        "arrival_span",
+        "arrival_gap_mean",
+        "arrival_gap_std",
+        "arrival_rate",
+        "priority_mean",
+        "priority_std"
+      ],
+      "label": "submission/regret_regressor {'max_depth': 2, 'min_samples_leaf': 5}",
+      "rules": "|--- n_processes <= 8.500\n|   |--- arrival_gap_mean <= 1.619\n|   |   |--- value: [0.012, 0.019, 0.049, 0.093]\n|   |--- arrival_gap_mean >  1.619\n|   |   |--- value: [0.039, 0.037, 0.034, 0.043]\n|--- n_processes >  8.500\n|   |--- arrival_gap_mean <= 1.951\n|   |   |--- value: [0.052, 0.051, 0.044, 0.063]\n|   |--- arrival_gap_mean >  1.951\n|   |   |--- value: [0.028, 0.030, 0.038, 0.065]\n"
+    },
+    "best_online": {
+      "regime": "online",
+      "family": "tree_classifier",
+      "params": {
+        "max_depth": 3,
+        "min_samples_leaf": 20
+      },
+      "after_completions": 20,
+      "default": 1,
+      "candidates": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "features": [
+        "n_processes",
+        "arrival_span",
+        "arrival_gap_mean",
+        "arrival_gap_std",
+        "arrival_rate",
+        "priority_mean",
+        "priority_std",
+        "obs_t_decision",
+        "obs_jobs_released",
+        "obs_jobs_completed",
+        "obs_completed_burst_mean",
+        "obs_completed_burst_median",
+        "obs_completed_burst_std",
+        "obs_completed_burst_cv",
+        "obs_completed_burst_max",
+        "obs_pending_jobs",
+        "obs_pending_attained_mean",
+        "obs_busy_fraction",
+        "obs_release_rate",
+        "obs_switch_rate",
+        "obs_procs_arrived_frac"
+      ],
+      "label": "online/tree_classifier, m=20 {'max_depth': 3, 'min_samples_leaf': 20}",
+      "rules": "|--- obs_completed_burst_median <= 1.750\n|   |--- obs_pending_jobs <= 20.500\n|   |   |--- class: 1\n|   |--- obs_pending_jobs >  20.500\n|   |   |--- n_processes <= 17.500\n|   |   |   |--- class: 1\n|   |   |--- n_processes >  17.500\n|   |   |   |--- class: 1\n|--- obs_completed_burst_median >  1.750\n|   |--- obs_completed_burst_cv <= 0.707\n|   |   |--- obs_pending_attained_mean <= 1.275\n|   |   |   |--- class: 8\n|   |   |--- obs_pending_attained_mean >  1.275\n|   |   |   |--- class: 1\n|   |--- obs_completed_burst_cv >  0.707\n|   |   |--- obs_release_rate <= 0.214\n|   |   |   |--- class: 1\n|   |   |--- obs_release_rate >  0.214\n|   |   |   |--- class: 1\n"
+    }
+  },
+  "train_only_diagnostic": {
+    "target": "log(T_RR8 / T_RR1) on training workloads",
+    "after_completions": 20,
+    "spearman_true_job_burst_cv_vs_target": 0.7931671306308902,
+    "spearman_observed_burst_cv_vs_target": 0.4608283948137246,
+    "spearman_true_vs_observed_cv": 0.4180871802527453,
+    "n_train": 900,
+    "n_with_observation": 863
+  },
+  "library_versions": {
+    "python": "3.11.9",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.4.6",
+    "pandas": "3.1.0"
+  }
+}

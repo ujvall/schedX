@@ -74,6 +74,14 @@ def paired_comparison(method, baseline, seed: int = 0, n_boot: int = 10_000) -> 
     }
 
 
+def mean_diff_ci(method, baseline, seed: int = 0, n_boot: int = 10_000) -> dict:
+    """Mean paired difference with a bootstrap CI; for metrics that can be 0
+    (e.g. response time), where log ratios are undefined."""
+    d = np.asarray(method, dtype=float) - np.asarray(baseline, dtype=float)
+    idx = np.random.default_rng(seed).integers(0, len(d), size=(n_boot, len(d)))
+    return {"mean_diff": float(d.mean()), "mean_diff_ci95": _ci(d[idx].mean(axis=1)), "median_diff": float(np.median(d))}
+
+
 def holm(pvalues: dict[str, float]) -> dict[str, float]:
     """Holm–Bonferroni adjusted p-values (monotone, capped at 1)."""
     names = sorted(pvalues, key=pvalues.get)
