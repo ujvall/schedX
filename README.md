@@ -22,12 +22,18 @@ and experimentally compare adaptive scheduling against classic algorithms.
   on train + validation only; controller frozen and committed before a
   single evaluation on 300 held-out test workloads; paired bootstrap CIs,
   Wilcoxon signed-rank tests, and Holm correction.
-* **Result:** the best fixed quantum is RR1. The frozen controller (online
-  decision tree) changed average turnaround by **−0.38% vs RR1** (95% CI
-  −0.75% to −0.04%, Wilcoxon p = 0.50, Holm p = 1). **This is not a
-  statistically supported improvement.** A per-workload oracle would gain
-  about 3%. Burst variability predicts the right quantum, but it is poorly
-  observable online.
+* **Result:** the best fixed quantum is RR1. Against it, the frozen
+  controller (online decision tree) gave a geometric-mean per-workload change
+  in average turnaround of **−0.38%** (95% CI −0.75% to −0.04%; the change in
+  mean turnaround is −0.17%). The pre-specified Wilcoxon test gives
+  p = 0.50 (Holm p = 1). **This is not a statistically supported
+  improvement:** at most weak evidence of a small benefit. A per-workload
+  oracle would gain about 3%. Burst variability predicts the right quantum,
+  but it is poorly observable online.
+* A post-hoc statistical audit
+  ([reports/phase3/audit/AUDIT.md](reports/phase3/audit/AUDIT.md)) reproduces
+  every committed number and explains why the CI and the Wilcoxon test differ.
+  Rerun it with `python scripts/audit_phase3.py`.
 
 Details: [docs/phase3_adaptive_scheduling.md](docs/phase3_adaptive_scheduling.md)
 and [reports/phase3/summary.md](reports/phase3/summary.md).

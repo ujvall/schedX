@@ -197,6 +197,31 @@ and records the reason. Missing feature columns are a schema error and raise.
 * **Breakdowns:** by true workload class (reporting only), process-count
   tercile, and burst-variability (`burst_cv`) tercile.
 
+> **Audit notes (Phase 3.1, added after the test evaluation; see
+> [`reports/phase3/audit/AUDIT.md`](../reports/phase3/audit/AUDIT.md)).**
+> The pre-specification above is left as written. The audit found these
+> clarifications necessary:
+>
+> * **Decision rule.** The rule used to call a result "statistically
+>   supported", Holm-adjusted p < 0.05 **and** the bootstrap CI's upper bound
+>   below 0, is implemented in `scripts/phase3_evaluate.py`. That script was
+>   written before the single test run but committed after it (`4ada3b7`).
+>   The rule is not stated in this section as frozen in `a13ffba`.
+> * **Holm family.** In code, the family is the 9 comparisons of the deployable
+>   methods against RR1 and RR2 (frozen in `a13ffba`). Because the selected
+>   controller and the best online controller turned out to be the same
+>   frozen controller, two of those 9 hypotheses are exact duplicates. That
+>   makes the correction slightly conservative; the audit reports the
+>   7-hypothesis values as a sensitivity check. No conclusion changes.
+> * **Rank-biserial.** It is computed after dropping zero differences
+>   (ranks 1..n over the changed workloads). That is a different ranking
+>   from the Pratt test it is reported next to.
+> * **Resample counts.** Main comparisons use 10,000 bootstrap resamples;
+>   the subgroup breakdowns use 2,000.
+> * **Estimands.** The bootstrap CI concerns the *mean* log ratio; the Pratt
+>   Wilcoxon test is a rank test which, with many tied (zero) pairs, behaves
+>   almost like a sign test. They can disagree without either being wrong.
+
 The test set is evaluated once with the frozen strategy. If the result is
 inconclusive it is reported as inconclusive; there is no re-tuning against
 test.
@@ -230,6 +255,11 @@ Numbers below are copied from the generated
 
 ### Test stage (300 held-out workloads, evaluated once)
 
+"Geo change" is the **geometric mean of per-workload ratios** of average
+turnaround, `exp(mean log(T_method / T_comparator)) − 1`. It is not the change
+in mean turnaround (for the primary comparison that is −0.17%: 189.16 vs
+189.49 ticks). Holm p uses the committed 9-hypothesis family.
+
 | comparison (avg turnaround) | geo change | 95% CI | better / equal / worse | Wilcoxon p | Holm p |
 |---|---|---|---|---|---|
 | **adaptive (selected) vs best fixed RR1 — primary** | **−0.38%** | [−0.75%, −0.04%] | 5% / 92% / 4% | 0.50 | 1.00 |
@@ -242,9 +272,15 @@ Numbers below are copied from the generated
 | *oracle, best switch at decision point (not deployable)* | −1.78% | [−2.25%, −1.34%] | 52% / 48% / 0% | <1e-30 | — |
 
 Mean absolute difference for the primary comparison: −0.33 ticks, 95% CI
-[−0.86, +0.18]. Effect sizes: rank-biserial −0.43 (over the 25 workloads
-whose decision changed), Cohen's dz −0.12. Share of the RR1 → oracle gap
-closed: 12.7% (selected), 3.4% (submission), 60.7% (online oracle).
+[−0.86, +0.18]. Effect sizes: matched-pairs rank-biserial −0.43 when zero
+differences are dropped (ranks 1–25 over the changed workloads; the value in
+`summary.md`) and −0.13 with the Pratt ranks that the pre-specified test
+uses; Cohen's dz −0.12. Share of the RR1 → oracle gap closed: 12.7%
+(selected), 3.4% (submission), 60.7% (online oracle).
+
+Holm sensitivity (audit, post hoc): without the two duplicate hypotheses
+(7 distinct), the adjusted p-values are 1.00 (primary), 0.24 (submission vs
+RR1), and 0.0048 (selected vs RR2). No conclusion changes.
 
 **Answer to H1: no statistically supported improvement over the best fixed
 quantum.** The pre-specified Wilcoxon test does not reject (p = 0.50,
@@ -255,6 +291,16 @@ excludes zero. The controller changed the decision on 25 of 300 workloads:
 those 25 workloads and sign-test p = 0.69. The data are consistent with a
 small benefit (well under 1%) concentrated in a few workloads, but they do
 not establish it.
+
+The Phase 3.1 audit (post hoc) adds tests of the *mean* log ratio, the
+quantity the CI describes: an exact paired sign-flip permutation test gives
+p = 0.042 and a t-test p = 0.044. These are unadjusted (Bonferroni over the
+7 distinct hypotheses would give 0.29), so they do not change the
+pre-specified conclusion. They do show that the result is weak evidence of a
+small mean benefit rather than evidence of no effect. The submission
+controller's raw Pratt p = 0.049 reflects more workloads improving than
+worsening (46 vs 28). Its mean effect is not distinguishable from zero
+(CI [−0.36%, +0.16%], permutation p = 0.45).
 
 Against the weaker Phase 2 baseline RR2, the adaptive controller is
 significantly better (−0.54%, Holm p = 0.006). Most of that comes from its
@@ -278,7 +324,7 @@ turnaround in ticks (its FCFS choice suits large CPU-bound workloads), but
 its per-workload effect is not significant and its response time is about 6×
 worse. It optimizes a different trade-off than the RR-only controller.
 
-### Where the controller helps (exploratory, no multiplicity correction)
+### Where the controller helps (exploratory, no multiplicity correction; CIs from 2,000 bootstrap resamples)
 
 * **By class:** `io_bound` −1.21% [−2.29%, −0.25%]; `cpu_bound` 0.00%
   (never switched); `mixed` +0.15% [0.00%, +0.43%].
