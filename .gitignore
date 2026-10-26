@@ -21,6 +21,7 @@ env/
 
 # Generated artifacts
 results/
+artifacts/
 data/generated/
 *.log
 graphify-out/

@@ -1,0 +1,33 @@
+{
+  "dataset": {
+    "master_seed": 2026,
+    "n_workloads": 1500,
+    "horizons": [1, 2, 3]
+  },
+  "generator": {
+    "process_count": [4, 24],
+    "mean_interarrival": [1.0, 12.0],
+    "burst_cv": [0.3, 1.2],
+    "p_io_cpu_regime": 0.1,
+    "p_io_io_regime": 0.9,
+    "p_io_mixed_regime": [0.3, 0.7],
+    "cpu_heavy_cpu_mean": [6.0, 25.0],
+    "cpu_heavy_io_mean": [2.0, 10.0],
+    "cpu_heavy_bursts": [1, 6],
+    "io_heavy_cpu_mean": [1.0, 5.0],
+    "io_heavy_io_mean": [8.0, 40.0],
+    "io_heavy_bursts": [3, 12],
+    "priority_max": 4
+  },
+  "split": {
+    "seed": 7,
+    "train": 0.6,
+    "validation": 0.2,
+    "test": 0.2
+  },
+  "model_seed": 42,
+  "policy": {
+    "quanta": [2, 4, 8, 16],
+    "class_policy_map": null
+  }
+}
