@@ -193,7 +193,8 @@ def render(r: dict, env: dict, cfg5: dict) -> str:
               "|---|---|---|---|---|---|---|---|---|"]
         for meth in M["avg_turnaround"]:
             b = o["controller_behaviour"].get(meth)
-            L.append(f"| {meth} | " + " | ".join(f"{M[k][meth]['mean']:.3f}" for k in METRICS[:3])
+            # Explicit order matching the header (METRICS lists waiting before response).
+            L.append(f"| {meth} | " + " | ".join(f"{M[k][meth]['mean']:.3f}" for k in ("avg_turnaround", "avg_response", "avg_waiting"))
                      + f" | {M['throughput'][meth]['mean']:.4f} | {M['cpu_utilization'][meth]['mean']:.3f} | "
                      f"{M['context_switches'][meth]['mean']:.1f} | "
                      + (f"{b['share_quantum_changed']:.0%} | {b['share_fallback']:.0%} |" if b else "— | — |"))

@@ -1,0 +1,88 @@
+{
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26300-SP0",
+  "library_versions": {
+    "python": "3.11.9",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.4.6",
+    "pandas": "3.1.0",
+    "scipy": "1.17.1",
+    "matplotlib": "3.11.2",
+    "joblib": "1.6.0"
+  },
+  "dataset_version_phase2": "67da9d294be3",
+  "generator_base": {
+    "process_count": [
+      4,
+      24
+    ],
+    "mean_interarrival": [
+      1.0,
+      12.0
+    ],
+    "burst_cv": [
+      0.3,
+      1.2
+    ],
+    "p_io_cpu_regime": 0.1,
+    "p_io_io_regime": 0.9,
+    "p_io_mixed_regime": [
+      0.3,
+      0.7
+    ],
+    "cpu_heavy_cpu_mean": [
+      6.0,
+      25.0
+    ],
+    "cpu_heavy_io_mean": [
+      2.0,
+      10.0
+    ],
+    "cpu_heavy_bursts": [
+      1,
+      6
+    ],
+    "io_heavy_cpu_mean": [
+      1.0,
+      5.0
+    ],
+    "io_heavy_io_mean": [
+      8.0,
+      40.0
+    ],
+    "io_heavy_bursts": [
+      3,
+      12
+    ],
+    "priority_max": 4
+  },
+  "phase5_config_sha256": "df6fa978e347",
+  "frozen_controllers": {
+    "p3_frozen": {
+      "config_hash": "ae9db57acecd",
+      "label": "online/tree_classifier, m=20 {'max_depth': 3, 'min_samples_leaf': 20}"
+    },
+    "p4_selected": {
+      "config_hash": "f4021560ce9c",
+      "label": "online_censored/logistic_classifier, m=5 {'C': 1.0}"
+    }
+  },
+  "operating_points": {
+    "small": {
+      "n_processes": 6,
+      "master_seed": 5101,
+      "n_workloads": 1000
+    },
+    "medium": {
+      "n_processes": 14,
+      "master_seed": 5102,
+      "n_workloads": 1000
+    },
+    "large": {
+      "n_processes": 22,
+      "master_seed": 5103,
+      "n_workloads": 1000
+    }
+  },
+  "simulator": "schedx Round Robin engine, integer ticks, CPU-only burst-trace projection, zero-cost context switches"
+}
