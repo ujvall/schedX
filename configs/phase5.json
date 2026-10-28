@@ -1,0 +1,128 @@
+{
+  "description": "Phase 5 principal experiment: three independently generated operating points; frozen controllers only",
+  "generator": "configs/phase2.json 'generator' section, unchanged except process_count fixed to n_processes",
+  "operating_points": {
+    "small": {
+      "n_processes": 6,
+      "master_seed": 5101,
+      "n_workloads": 1000
+    },
+    "medium": {
+      "n_processes": 14,
+      "master_seed": 5102,
+      "n_workloads": 1000
+    },
+    "large": {
+      "n_processes": 22,
+      "master_seed": 5103,
+      "n_workloads": 1000
+    }
+  },
+  "reserved_seeds_not_to_reuse": [
+    2026,
+    2027,
+    12345
+  ],
+  "fixed_quanta": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "frozen_controllers": {
+    "p3_frozen": {
+      "artifact": "artifacts/phase3/controllers.joblib",
+      "key": "selected",
+      "config_hash": "ae9db57acecd"
+    },
+    "p4_selected": {
+      "artifact": "artifacts/phase4/controllers.joblib",
+      "key": "p4_selected",
+      "config_hash": "f4021560ce9c"
+    }
+  },
+  "default_quantum": 1,
+  "statistics": {
+    "estimand": "per operating point: mean over workloads of log(T_method / T_comparator), T = mean job turnaround of the workload; reported as exp(.)-1",
+    "also_reported": "change in aggregate mean turnaround = mean(T_method)/mean(T_comparator) - 1, with paired bootstrap CI",
+    "test": "two-sided paired sign-flip permutation test of the mean log ratio",
+    "signflip": {
+      "exact_max_nonzero": 26,
+      "monte_carlo_draws": 100000,
+      "seed": 7
+    },
+    "bootstrap": {
+      "n": 10000,
+      "seed": 123
+    },
+    "alpha": 0.05,
+    "sesoi_relative": 0.01,
+    "multiplicity": "Holm within the primary family (6) and, separately, within the secondary family (9); identical decision vectors merged first",
+    "decision_rule": "statistically supported iff Holm p < alpha and 95% CI upper bound < 0; practically meaningful iff supported and CI upper bound <= -sesoi; practically negligible iff the whole 95% CI lies within (-sesoi, +sesoi)",
+    "pooled": "equal-weight average of the three per-operating-point means; bootstrap stratified by operating point; descriptive, not in either family"
+  },
+  "primary_hypotheses": {
+    "H1_small": [
+      "p3_frozen",
+      "RR1"
+    ],
+    "H2_small": [
+      "p4_selected",
+      "RR1"
+    ],
+    "H1_medium": [
+      "p3_frozen",
+      "RR1"
+    ],
+    "H2_medium": [
+      "p4_selected",
+      "RR1"
+    ],
+    "H1_large": [
+      "p3_frozen",
+      "RR1"
+    ],
+    "H2_large": [
+      "p4_selected",
+      "RR1"
+    ]
+  },
+  "secondary_hypotheses": {
+    "S1_small": [
+      "p4_selected",
+      "p3_frozen"
+    ],
+    "S2_small": [
+      "p3_frozen",
+      "RR2"
+    ],
+    "S3_small": [
+      "p4_selected",
+      "RR2"
+    ],
+    "S1_medium": [
+      "p4_selected",
+      "p3_frozen"
+    ],
+    "S2_medium": [
+      "p3_frozen",
+      "RR2"
+    ],
+    "S3_medium": [
+      "p4_selected",
+      "RR2"
+    ],
+    "S1_large": [
+      "p4_selected",
+      "p3_frozen"
+    ],
+    "S2_large": [
+      "p3_frozen",
+      "RR2"
+    ],
+    "S3_large": [
+      "p4_selected",
+      "RR2"
+    ]
+  }
+}
