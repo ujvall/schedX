@@ -1,0 +1,86 @@
+{
+  "purpose": "Reproduce the frozen Phase 3 controller on the established test split (read-only check).",
+  "phase3_config_hash": "ae9db57acecd",
+  "dataset_version": "67da9d294be3",
+  "controller": {
+    "regime": "online",
+    "family": "tree_classifier",
+    "params": {
+      "max_depth": 3,
+      "min_samples_leaf": 20
+    },
+    "after_completions": 20,
+    "default": 1,
+    "candidates": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "features": [
+      "n_processes",
+      "arrival_span",
+      "arrival_gap_mean",
+      "arrival_gap_std",
+      "arrival_rate",
+      "priority_mean",
+      "priority_std",
+      "obs_t_decision",
+      "obs_jobs_released",
+      "obs_jobs_completed",
+      "obs_completed_burst_mean",
+      "obs_completed_burst_median",
+      "obs_completed_burst_std",
+      "obs_completed_burst_cv",
+      "obs_completed_burst_max",
+      "obs_pending_jobs",
+      "obs_pending_attained_mean",
+      "obs_busy_fraction",
+      "obs_release_rate",
+      "obs_switch_rate",
+      "obs_procs_arrived_frac"
+    ],
+    "label": "online/tree_classifier, m=20 {'max_depth': 3, 'min_samples_leaf': 20}",
+    "rules": "|--- obs_completed_burst_median <= 1.750\n|   |--- obs_pending_jobs <= 20.500\n|   |   |--- class: 1\n|   |--- obs_pending_jobs >  20.500\n|   |   |--- n_processes <= 17.500\n|   |   |   |--- class: 1\n|   |   |--- n_processes >  17.500\n|   |   |   |--- class: 1\n|--- obs_completed_burst_median >  1.750\n|   |--- obs_completed_burst_cv <= 0.707\n|   |   |--- obs_pending_attained_mean <= 1.275\n|   |   |   |--- class: 8\n|   |   |--- obs_pending_attained_mean >  1.275\n|   |   |   |--- class: 1\n|   |--- obs_completed_burst_cv >  0.707\n|   |   |--- obs_release_rate <= 0.214\n|   |   |   |--- class: 1\n|   |   |--- obs_release_rate >  0.214\n|   |   |   |--- class: 1\n"
+  },
+  "default_quantum_q0": 1,
+  "n_test_workloads": 300,
+  "reproduces_committed_phase3_evidence": true,
+  "mismatches": [],
+  "n_mismatches": 0,
+  "decisions": {
+    "chosen_quantum_counts": {
+      "1": 275,
+      "8": 25
+    },
+    "decision_source_counts": {
+      "model": 283,
+      "fallback:no_observation": 17
+    },
+    "share_quantum_changed": 0.08333333333333333
+  },
+  "test_means": {
+    "phase3_controller": {
+      "avg_turnaround": 189.16158412326777,
+      "avg_waiting": 180.40434699147528,
+      "avg_response": 25.04691655067759,
+      "throughput": 0.13444888355236492,
+      "cpu_utilization": 0.9129614543208139,
+      "context_switches": 552.0766666666667
+    },
+    "RR1": {
+      "avg_turnaround": 189.49142397150422,
+      "avg_waiting": 180.73418683971173,
+      "avg_response": 20.325945194959058,
+      "throughput": 0.13444888355236492,
+      "cpu_utilization": 0.9129614543208139,
+      "context_switches": 575.7566666666667
+    }
+  },
+  "library_versions": {
+    "python": "3.11.9",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.4.6",
+    "pandas": "3.1.0"
+  }
+}
