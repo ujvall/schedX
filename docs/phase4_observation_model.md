@@ -179,3 +179,151 @@ oracle comparisons.
 
 **Exploratory (no multiplicity correction):** breakdowns by true class,
 `burst_cv` tercile, and process-count tercile (2,000 resamples).
+
+## 7. Protocol record
+
+| Step | Commit |
+|---|---|
+| Baseline reproduction + this protocol (sections 1–6) | `206d494` |
+| Estimator + tests | `0fa9a1f` |
+| Controller integration, validation selection, **freeze** (train + validation only) | `90dd9e5` |
+| Single evaluation on test + fresh set | `b98b5ed` |
+
+No file in `src/`, `configs/`, or `scripts/phase4_train.py` changed
+between the freeze and the evaluation. The fresh confirmation set was
+generated for the first time inside `phase4_evaluate.py`.
+
+## 8. Results
+
+Numbers are copied from the generated
+[`reports/phase4/summary.md`](../reports/phase4/summary.md) (config hash
+`f4021560ce9c`). Figures are in `reports/phase4/figures/`.
+
+### Fit stage (train + validation)
+
+* The best fixed quantum is still RR1 (unchanged from Phase 3).
+* 57 `online_censored` configurations (3 decision points × 19 grid
+  entries). **Frozen `p4_selected`:** logistic classifier (C = 1)
+  deciding after **5** completions. Validation: −0.536% vs RR1 (Phase 3
+  frozen: −0.467%). **`p4_ablation`** (Phase 3 tree, depth 3, m = 20, with
+  E features): −0.287%.
+* The KM restricted CV is among the largest standardized logistic
+  coefficients, with the sign theory predicts (higher variability → keep
+  RR1). The coefficients are in `reports/phase4/frozen_controller.json`.
+
+### Pre-specified family (average turnaround; negative = better)
+
+| | Hypothesis | Established test (n = 300) | Fresh set (n = 600) |
+|---|---|---|---|
+| **H1 (primary)** | p4_selected vs p3_frozen | **+0.64%** [+0.02%, +1.28%]; sign-flip p = 0.047; Holm p = 0.14 | +0.08% [−0.35%, +0.51%]; p = 0.73; Holm p = 1 |
+| H2 | p4_selected vs RR1 | +0.26% [−0.35%, +0.88%]; p = 0.41; Holm p = 0.81 | −0.44% [−0.90%, +0.03%]; p = 0.067; Holm p = 0.20 |
+| H3 | p4_ablation vs p3_frozen | +0.01% [−0.39%, +0.42%]; p = 0.96; Holm p = 0.96 | −0.01% [−0.32%, +0.31%]; p = 0.95; Holm p = 1 |
+
+Values are the geometric-mean change with its 95% paired bootstrap CI, the
+sign-flip p-value, and the Holm-adjusted p-value. No hypotheses were merged
+(all decision vectors differed).
+
+**Answer: the improved observation estimator did not produce a
+statistically supported improvement on either evaluation set.** On the
+established test split the point estimate even favours the Phase 3
+controller (the CI just excludes 0 on the unfavourable side, but Holm
+p = 0.14). On the fresh set there is no difference. The controlled
+ablation, which changes only the features, shows no effect on either set.
+
+### Secondary outcomes
+
+| | Established test | | Fresh set | |
+|---|---|---|---|---|
+| | p3_frozen | p4_selected | p3_frozen | p4_selected |
+| Mean turnaround | 189.16 | 189.80 | 180.65 | 180.98 |
+| Mean response | 25.05 | 41.46 | 25.45 | 38.41 |
+| Mean waiting | 180.40 | 181.04 | 171.91 | 172.24 |
+| Context switches | 552.1 | 420.2 | 524.1 | 415.1 |
+| Quantum changed | 8% | 39% | 9% | 35% |
+
+* **Response time** worsens by +16.4 ticks vs p3_frozen (95% CI
+  [+11.6, +21.5]) on test and +13.0 [+10.0, +16.0] on the fresh set.
+  Switching to RR8 delays first dispatch.
+* Throughput and CPU utilization are identical across methods (work
+  conserving), as in Phase 3.
+* **Replication of Phase 3 (pre-specified secondary, not in the corrected
+  family):** on the fresh set, `p3_frozen` vs RR1 is −0.51%
+  [−0.86%, −0.19%], sign-flip p = 0.0024. On the established test split it
+  was −0.38% [−0.75%, −0.04%], p = 0.042. The small Phase 3 benefit
+  reappears on 600 new workloads.
+* `p4_ablation` vs RR1: −0.36% [−0.85%, +0.11%] (test), −0.52%
+  [−0.92%, −0.15%] (fresh). This is indistinguishable from `p3_frozen`
+  (H3).
+* Oracles (not deployable): the per-workload best fixed quantum is −2.92%
+  (test) and −3.34% (fresh) vs RR1, so the headroom is unchanged.
+
+### Exploratory breakdowns (p4_selected vs p3_frozen)
+
+On both sets `p4_selected` does worst on `mixed` workloads (+0.96% test,
++0.94% fresh) and in the highest `burst_cv` tercile (+1.13%, +0.80%). On
+the fresh set it does best in the lowest `burst_cv` tercile (−0.72%,
+CI includes 0). These are uncorrected and descriptive only.
+
+## 9. Interpretation
+
+1. **Better estimates, not better decisions.** The KM estimator removes
+   most of the bias in the identified part of the burst distribution
+   (error 0.43–0.50 → 0.08–0.10) and raises the correlation with the
+   decision target (e.g. 0.18 → 0.33 at m = 5). That did not translate into
+   lower turnaround.
+2. **The estimator features make controllers switch much more.** Both
+   Phase 4 controllers move to RR8 about 4–5 times as often as the Phase 3
+   controller (113 and 98 of 300 test workloads, vs 25). The extra
+   switches win on some workloads and lose on others about equally
+   (22% better / 21% worse for H1 on test). They cost response time
+   consistently.
+3. **Selection is dominated by noise at this effect size.** The validation
+   advantage that selected `p4_selected` (−0.536% vs −0.467%) is about 0.07
+   percentage points. That is an order of magnitude smaller than the
+   uncertainty of a 300-workload comparison (the H1 test CI is 1.26
+   points wide). With 57 candidate configurations, the winner on
+   validation is largely a winner's-curse pick. `p4_selected` also decides
+   early (m = 5), when the identified range is smallest (median τ = 9
+   ticks).
+4. **The remaining signal is moderate.** Even the improved CV estimate
+   correlates only about 0.5 with the target. The unidentified tail beyond
+   τ, which is where long bursts live, is exactly what decides between
+   RR1 and RR8.
+5. The Phase 3 controller's small benefit over RR1 replicated on fresh
+   data (secondary). Its conservative behaviour (switching rarely) appears
+   to be an advantage, not a weakness.
+
+## 10. Limitations
+
+* Synthetic workloads, open-loop CPU-only projection, free context
+  switches, and one decision per workload, as in Phase 3.
+* Kaplan–Meier assumes censoring is independent of burst length given the
+  observation time. Under RR this holds only approximately; the estimator
+  slightly underestimates the tail mass (−0.03 to −0.05).
+* The established test split had been evaluated once before (Phase 3). The
+  fresh confirmation set addresses this, and it agrees on the main
+  conclusion.
+* Only turnaround was optimized. `p4_selected` trades response time for
+  nothing measurable in turnaround.
+* Model selection used the same validation set as Phase 3 and a
+  single split; repeated or nested validation might pick more
+  conservative configurations.
+
+**Possible next steps (not done):** a selection criterion that penalizes
+switching or response time; a decision rule that switches only when the
+predicted gain exceeds a validation-calibrated margin; periodic
+re-decisions as more bursts complete; an I/O-aware closed-loop simulator.
+
+## 11. Reproduce
+
+```bash
+python scripts/phase4_baseline.py   # verify the frozen Phase 3 controller reproduces (read-only)
+python scripts/phase4_train.py      # train + validation only -> frozen controller (artifacts/phase4/, reports/phase4/)
+python scripts/phase4_evaluate.py   # frozen controllers, test split + fresh set, once
+python scripts/phase4_plots.py      # figures from saved results
+```
+
+Requires the Phase 2 dataset (`scripts/generate_dataset.py`) and the frozen
+Phase 3 controllers (`scripts/phase3_train.py`). Runtime is about 2 min
+for training and 1.5 min for evaluation. `phase4_evaluate.py` refuses to
+run if any configuration or the dataset changed after freezing.

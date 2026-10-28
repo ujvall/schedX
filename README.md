@@ -12,6 +12,28 @@ and experimentally compare adaptive scheduling against classic algorithms.
 
 ## Status
 
+**Phase 4 — improved online workload estimation: complete.**
+
+* Completed bursts seen online are length-biased: short ones finish first.
+  Phase 4 adds a Kaplan–Meier estimator that treats unfinished jobs as
+  right-censored. Within the identified range it cuts the error in the
+  estimated mean burst about fivefold (training workloads).
+* A separate controller using these estimates was selected on validation,
+  frozen, and evaluated once on the established test split and on 600 fresh
+  workloads (new seed). Statistics: sign-flip permutation tests of the mean
+  log ratio, paired bootstrap CIs, and Holm over a pre-specified family.
+* **Result:** no statistically supported improvement over the frozen
+  Phase 3 controller. The primary comparison gave a geometric-mean change in
+  turnaround of +0.64% on test (CI +0.02% to +1.28%, Holm p = 0.14) and
+  +0.08% on the fresh set (CI −0.35% to +0.51%). The new controller
+  switches quanta far more often and worsens response time. Better
+  estimates did not yield better decisions.
+* A pre-specified secondary result: the Phase 3 controller's small benefit
+  over RR1 replicated on the fresh set (−0.51%, CI −0.86% to −0.19%).
+
+Details: [docs/phase4_observation_model.md](docs/phase4_observation_model.md)
+and [reports/phase4/summary.md](reports/phase4/summary.md).
+
 **Phase 3 — feature-aware adaptive quantum selection: complete.**
 
 * Round Robin can now change its quantum mid-run (`adaptive_round_robin`).
@@ -88,11 +110,15 @@ src/schedx/
   controller.py   feature -> quantum controller (simulator-independent)(Phase 3)
   stats.py        paired bootstrap CIs, Wilcoxon, effect sizes, Holm   (Phase 3)
   phase3.py       Phase 3 fit/select and test-stage pipeline           (Phase 3)
-configs/              phase2.json, phase3.json
+  estimator.py    Kaplan-Meier estimate of unfinished bursts           (Phase 4)
+  phase4.py       Phase 4 fit/select, inference, and analysis          (Phase 4)
+configs/              phase2.json, phase3.json, phase4.json
 scripts/              demo, generate_dataset, train_evaluate, plot_results, predict,
-                      phase3_train, phase3_evaluate, phase3_plots
+                      phase3_train, phase3_evaluate, phase3_plots, audit_phase3,
+                      phase4_baseline, phase4_train, phase4_evaluate, phase4_plots
 reports/phase2/       generated metrics.json, summary.md, figures (committed)
-reports/phase3/       frozen controller, validation table, test results, figures (committed)
+reports/phase3/       frozen controller, validation table, test results, figures, audit/ (committed)
+reports/phase4/       baseline check, frozen controller, estimator diagnostic, results, figures (committed)
 artifacts/            generated dataset, models, predictions (not committed)
 tests/                pytest suite
 docs/                 architecture, Phase 2 design/results, data dictionary
@@ -191,6 +217,21 @@ python scripts/phase3_plots.py      # -> reports/phase3/figures/*.png
 `phase3_evaluate.py` refuses to run if `configs/phase3.json` or the dataset
 changed since the controllers were frozen.
 
+## Reproducing Phase 4
+
+Requires the Phase 2 dataset and the frozen Phase 3 controllers (previous
+sections). Then:
+
+```bash
+python scripts/phase4_baseline.py   # read-only check that the frozen Phase 3 controller reproduces
+python scripts/phase4_train.py      # train+validation only -> artifacts/phase4/, reports/phase4/frozen_controller.json
+python scripts/phase4_evaluate.py   # frozen controllers, test split + fresh set once -> reports/phase4/results.json, summary.md
+python scripts/phase4_plots.py      # -> reports/phase4/figures/*.png
+```
+
+`phase4_evaluate.py` refuses to run if any configuration or the dataset
+changed after freezing.
+
 ## Limitations
 
 * The Phase 1 simulator schedules CPU bursts only: no I/O blocking, one
@@ -200,6 +241,7 @@ changed since the controllers were frozen.
   dataset seed, and one split; see `docs/phase2_ml.md` §8.
 * Phase 3 uses an open-loop CPU-only projection with free context switches
   and decides once per workload; see `docs/phase3_adaptive_scheduling.md` §12.
+  Phase 4 shares these limits; see `docs/phase4_observation_model.md` §10.
 * Single CPU.
 * Context-switch overhead is counted but takes zero simulated time.
 * Integer time only.
@@ -213,6 +255,9 @@ changed since the controllers were frozen.
    offline evaluation, initial plots~~ (Phase 2)
 3. ~~Adaptive quantum selection with a leakage-safe, pre-specified
    comparison against fixed quanta~~ (Phase 3; no supported improvement)
-4. Candidate next steps: censoring-aware online observation, periodic
+4. ~~Censoring-aware online observation with a frozen, pre-specified
+   comparison and a fresh confirmation set~~ (Phase 4; no supported
+   improvement)
+5. Candidate next steps: switching-aware selection criteria, periodic
    re-decision, context-switch overhead, I/O-aware simulation
-5. Interactive dashboard (Streamlit)
+6. Interactive dashboard (Streamlit)
