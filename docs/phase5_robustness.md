@@ -107,13 +107,29 @@ The result of an actual clean-clone reproduction is recorded in §8.
 |---|---|---|
 | At least three independent workload sizes / operating points for the principal experiment | **Satisfied** | 6, 14, and 22 processes; separate seeds; 1,000 independently generated workloads each; disjointness and uniqueness verified (§2). |
 | Identical configurations when comparing algorithms | **Satisfied** | Every method receives the identical job list (hash-verified per row), the same simulator settings, and the same frozen controllers. |
-| Reproducible code and raw CSVs | **Satisfied on this machine** | Scripts, configs, seed manifest, raw input traces, and raw per-workload results are in the repository; reruns are byte-identical. A clean-clone reproduction is recorded in §8. **Not verified:** other operating systems or Python and library versions. |
+| Reproducible code and raw CSVs | **Satisfied (verified on one environment)** | Scripts, configs, seed manifest, raw input traces, and raw per-workload results are in the repository. A fresh clone rebuilt everything with the documented commands and reproduced all committed Phase 3–5 evidence exactly (§8). **Not verified:** other operating systems or Python and library versions. |
 | Final case-study report, at most eight pages | **Not done** | Only an outline exists (§9); the report has not been written. |
 | Real-hardware / kernel validation | **Not applicable / not claimed** | All evidence is simulator-based (CPU-only burst-trace projection, free context switches). |
 
 ## 8. Clean-clone reproduction
 
-*Recorded after the Phase 5 commits were pushed; see below.*
+Performed on commit `be5fb9d`, cloned fresh from `origin/main` into an
+empty directory and run with the same Python 3.11.9 environment.
+`artifacts/` is not in the repository, so it was rebuilt from scratch.
+
+1. `generate_dataset.py`, `phase3_train.py`, and `phase4_train.py` rebuilt
+   the dataset and both frozen controllers. The rewritten Phase 3 and
+   Phase 4 frozen-controller files, validation tables, and estimator
+   diagnostic were identical to the committed ones (`git status` clean).
+2. `phase5_run.py`, `phase5_plots.py`, and `phase5_audit.py` regenerated
+   every file under `reports/phase5/`: manifest, gzip input traces, raw
+   CSVs, `results.json`, summary, all five figures, and the robustness
+   checks. All were identical to the committed evidence (`git status` clean
+   apart from the ignored `artifacts/`). The audit passed.
+3. The full test suite passed in the clone: 243 tests.
+
+Not verified: other operating systems, Python versions, or library
+versions.
 
 ## 9. Outline for the eight-page case study (not yet written)
 
