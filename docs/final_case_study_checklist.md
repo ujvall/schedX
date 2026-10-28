@@ -1,0 +1,60 @@
+# Case-Study Submission Checklist
+
+For `docs/final_case_study.{md,docx,pdf}`. Items marked **You** need your
+personal action or confirmation before submission.
+
+## Verified by the build
+
+| Item | Status |
+|---|---|
+| Page count | 6 pages (A4, 10.5 pt body), counted from the rendered PDF; limit is 8 |
+| Three independent operating points | 6, 14, and 22 processes; 1,000 workloads each (Table 2) |
+| Numbers match committed evidence | 38/38 claims recomputed from result files and found verbatim (`docs/case_study_build/check_numbers.py`) |
+| Figures from committed data | `docs/case_study_build/report_figures.py` reads `reports/phase5/results.json`; no values hand-entered |
+| Repository link | https://github.com/ujvall/schedX/commit/e848cf2 resolves (HTTP 200); repository public |
+| No kernel/hardware claims | stated as simulator-only in the abstract and limitations |
+| References | 12 sources checked against Crossref, OpenAlex, JMLR, JSTOR, or Open Library (details below) |
+
+## You must act on or confirm
+
+1. **AI-generated content.** This draft was written by an AI assistant. The
+   course limits AI-generated content to under 10%, so **this text cannot be
+   submitted as it is**. Use it as a fact base: rewrite it in your own words,
+   make sure you can explain and defend every sentence, then remove the
+   "Draft status" box at the top. No detector score can be predicted or
+   promised.
+2. **AI-use disclosure (Section 9).** Check what your course or university
+   requires, then edit the disclosure. Keep it factual: the code, tests, and
+   documentation were developed with substantial AI assistance. Fill in the
+   bracketed note with the work and review you personally did.
+3. **Placeholders** on page 1: course name and code, instructor, university,
+   and submission date.
+4. **Contribution statement.** Confirm "individual project by Ujval Sai" and
+   that `cremebits` is your Git identity.
+5. **Page-limit rules.** Confirm whether references count toward the eight
+   pages. At 6 pages this is within the limit either way.
+6. **Plagiarism check.** Run the institution's tool on your final rewritten
+   version.
+
+## Reference verification notes
+
+| Ref. | Verified via | Note for you |
+|---|---|---|
+| [1] Silberschatz, Galvin, Gagne (Wiley 2018) | Open Library (title, authors, publisher, ISBN) | Edition number not given by the registry; cited by ISBN |
+| [2] Kleinrock (1967), JACM | Crossref DOI | **Check** that its content supports "queueing analyses of time-shared systems … quantum size affects delay" (read the abstract) |
+| [3] Schrage (1968), Operations Research | Crossref DOI | Supports SRTF/SRPT optimality |
+| [4] Pedregosa et al. (2011), JMLR | jmlr.org metadata (vol. 12, pp. 2825–2830) | — |
+| [5] Breiman (2001), Machine Learning | Crossref DOI | — |
+| [6] Kaplan & Meier (1958), JASA | Crossref DOI | — |
+| [7] Efron (1979), Annals of Statistics | Crossref DOI | — |
+| [8] Good (2005), Springer | Crossref DOI + OpenAlex (author) | — |
+| [9] Holm (1979), Scand. J. Statistics | OpenAlex + JSTOR stable page | No issue number or Crossref DOI; cited by JSTOR URL |
+| [10] Wilcoxon (1945), Biometrics Bulletin | Crossref DOI | **End page 83 not confirmed** (registries list start page 80 only); check on JSTOR |
+| [11] Pratt (1959), JASA | Crossref DOI | — |
+| [12] Negi & Kumar (2005), TENCON | Crossref DOI | Cited only as an example of ML applied to Linux process scheduling (supported by its title) |
+
+## Writing-style note
+
+No humanization or academic-editing skill is installed in this environment,
+and none was used. The draft is written plainly, in a neutral voice ("SchedX
+implements…"), and makes no first-person claims about who wrote the code.
