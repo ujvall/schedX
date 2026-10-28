@@ -82,6 +82,39 @@ def mean_diff_ci(method, baseline, seed: int = 0, n_boot: int = 10_000) -> dict:
     return {"mean_diff": float(d.mean()), "mean_diff_ci95": _ci(d[idx].mean(axis=1)), "median_diff": float(np.median(d))}
 
 
+def signflip_test(log_ratios, seed: int = 0, n_mc: int = 100_000, exact_max: int = 26) -> dict:
+    """Two-sided paired sign-flip permutation test of the MEAN of per-workload
+    log ratios (Phase 4). Under H0 each non-zero difference is equally likely
+    to have either sign; zero differences contribute nothing.
+
+    Exact (all 2^k sign patterns, meet-in-the-middle) when k <= ``exact_max``
+    non-zero pairs, otherwise ``n_mc`` seeded Monte Carlo flips with
+    p = (hits + 1) / (n_mc + 1).
+    """
+    d = np.asarray(log_ratios, dtype=float)
+    nz = np.abs(d[d != 0])
+    obs = abs(d.sum())
+    if len(nz) == 0:
+        return {"p": 1.0, "method": "exact", "n_nonzero": 0}
+    tol = 1e-12 * max(1.0, obs)
+    if len(nz) <= exact_max:
+        def sums(v):
+            if len(v) == 0:
+                return np.zeros(1)
+            return np.array(np.meshgrid(*[[-x, x] for x in v], indexing="ij")).reshape(len(v), -1).sum(axis=0)
+
+        a, c = sums(nz[: len(nz) // 2]), np.sort(sums(nz[len(nz) // 2:]))
+        hits = (len(c) - np.searchsorted(c, obs - a - tol, side="left")).sum()
+        hits += np.searchsorted(c, -obs - a + tol, side="right").sum()
+        return {"p": float(hits / (len(a) * len(c))), "method": "exact", "n_nonzero": int(len(nz))}
+    rng = np.random.default_rng(seed)
+    hits = 0
+    for start in range(0, n_mc, 10_000):
+        signs = rng.choice([-1.0, 1.0], size=(min(10_000, n_mc - start), len(nz)))
+        hits += int((np.abs(signs @ nz) >= obs - tol).sum())
+    return {"p": float((hits + 1) / (n_mc + 1)), "method": f"monte_carlo_{n_mc}", "n_nonzero": int(len(nz))}
+
+
 def holm(pvalues: dict[str, float]) -> dict[str, float]:
     """Holm–Bonferroni adjusted p-values (monotone, capped at 1)."""
     names = sorted(pvalues, key=pvalues.get)

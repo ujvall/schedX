@@ -1,0 +1,132 @@
+{
+  "description": "Phase 4 improved online observation; candidates, decision points and grids copied from Phase 3 so only the features change",
+  "candidates": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "decision_after_completions": [
+    5,
+    10,
+    20
+  ],
+  "seed": 42,
+  "grids": {
+    "tree_classifier": [
+      {
+        "max_depth": 2,
+        "min_samples_leaf": 20
+      },
+      {
+        "max_depth": 2,
+        "min_samples_leaf": 5
+      },
+      {
+        "max_depth": 3,
+        "min_samples_leaf": 20
+      },
+      {
+        "max_depth": 3,
+        "min_samples_leaf": 5
+      },
+      {
+        "max_depth": 4,
+        "min_samples_leaf": 20
+      },
+      {
+        "max_depth": 4,
+        "min_samples_leaf": 5
+      },
+      {
+        "max_depth": 6,
+        "min_samples_leaf": 20
+      },
+      {
+        "max_depth": 6,
+        "min_samples_leaf": 5
+      }
+    ],
+    "logistic_classifier": [
+      {
+        "C": 0.1
+      },
+      {
+        "C": 1.0
+      },
+      {
+        "C": 10.0
+      }
+    ],
+    "regret_regressor": [
+      {
+        "max_depth": 2,
+        "min_samples_leaf": 20
+      },
+      {
+        "max_depth": 2,
+        "min_samples_leaf": 5
+      },
+      {
+        "max_depth": 3,
+        "min_samples_leaf": 20
+      },
+      {
+        "max_depth": 3,
+        "min_samples_leaf": 5
+      },
+      {
+        "max_depth": 4,
+        "min_samples_leaf": 20
+      },
+      {
+        "max_depth": 4,
+        "min_samples_leaf": 5
+      },
+      {
+        "max_depth": 6,
+        "min_samples_leaf": 20
+      },
+      {
+        "max_depth": 6,
+        "min_samples_leaf": 5
+      }
+    ]
+  },
+  "fresh_confirmation_set": {
+    "master_seed": 2027,
+    "n_workloads": 600
+  },
+  "statistics": {
+    "estimand": "mean over workloads of log(T_method / T_comparator), T = average job turnaround",
+    "test": "two-sided paired sign-flip permutation test of the mean log ratio",
+    "signflip": {
+      "exact_max_nonzero": 26,
+      "monte_carlo_draws": 100000,
+      "seed": 7
+    },
+    "bootstrap": {
+      "n": 10000,
+      "seed": 123
+    },
+    "breakdown_bootstrap_n": 2000,
+    "alpha": 0.05,
+    "multiplicity": "Holm over the primary family; hypotheses with identical decision vectors are merged first",
+    "decision_rule": "supported improvement iff Holm-adjusted p < alpha and upper 95% CI bound < 0"
+  },
+  "hypotheses": {
+    "H1": [
+      "p4_selected",
+      "p3_frozen"
+    ],
+    "H2": [
+      "p4_selected",
+      "RR1"
+    ],
+    "H3": [
+      "p4_ablation",
+      "p3_frozen"
+    ]
+  },
+  "primary_hypothesis": "H1"
+}

@@ -30,12 +30,15 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from .features import feature_columns
+from .estimator import E_FEATURES
 from .observation import O_FEATURES
 
 SUBMISSION_FEATURES = feature_columns(["A"])
 ALLOWED_FEATURES = {
     "submission": list(SUBMISSION_FEATURES),
     "online": [*SUBMISSION_FEATURES, *O_FEATURES],
+    # Phase 4: adds censoring-aware (Kaplan-Meier) estimates of unfinished work.
+    "online_censored": [*SUBMISSION_FEATURES, *O_FEATURES, *E_FEATURES],
 }
 FAMILIES = ("constant", "tree_classifier", "logistic_classifier", "regret_regressor")
 
@@ -108,12 +111,12 @@ class QuantumController:
             raise ValueError("default quantum must be a candidate")
         if self.family != "constant" and self.model is None:
             raise ValueError(f"{self.family} controller needs a fitted model")
-        if self.regime == "online" and self.family != "constant" and not self.after_completions:
+        if self.regime.startswith("online") and self.family != "constant" and not self.after_completions:
             raise ValueError("online controller needs after_completions")
         self.order = tie_order(self.candidates, self.default)
 
     def describe(self) -> str:
-        m = f", m={self.after_completions}" if self.regime == "online" and self.family != "constant" else ""
+        m = f", m={self.after_completions}" if self.regime.startswith("online") and self.family != "constant" else ""
         return f"{self.regime}/{self.family}{m} {self.params or ''}".strip()
 
     def decide_batch(self, X: pd.DataFrame | None) -> list[tuple[int, str]]:

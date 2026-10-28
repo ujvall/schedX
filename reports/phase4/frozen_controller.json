@@ -1,0 +1,404 @@
+{
+  "frozen": true,
+  "config_hash": "f4021560ce9c",
+  "phase3_config_hash": "ae9db57acecd",
+  "dataset_version": "67da9d294be3",
+  "phase4_config": {
+    "description": "Phase 4 improved online observation; candidates, decision points and grids copied from Phase 3 so only the features change",
+    "candidates": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "decision_after_completions": [
+      5,
+      10,
+      20
+    ],
+    "seed": 42,
+    "grids": {
+      "tree_classifier": [
+        {
+          "max_depth": 2,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 2,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 3,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 3,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 4,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 4,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 6,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 6,
+          "min_samples_leaf": 5
+        }
+      ],
+      "logistic_classifier": [
+        {
+          "C": 0.1
+        },
+        {
+          "C": 1.0
+        },
+        {
+          "C": 10.0
+        }
+      ],
+      "regret_regressor": [
+        {
+          "max_depth": 2,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 2,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 3,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 3,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 4,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 4,
+          "min_samples_leaf": 5
+        },
+        {
+          "max_depth": 6,
+          "min_samples_leaf": 20
+        },
+        {
+          "max_depth": 6,
+          "min_samples_leaf": 5
+        }
+      ]
+    },
+    "fresh_confirmation_set": {
+      "master_seed": 2027,
+      "n_workloads": 600
+    },
+    "statistics": {
+      "estimand": "mean over workloads of log(T_method / T_comparator), T = average job turnaround",
+      "test": "two-sided paired sign-flip permutation test of the mean log ratio",
+      "signflip": {
+        "exact_max_nonzero": 26,
+        "monte_carlo_draws": 100000,
+        "seed": 7
+      },
+      "bootstrap": {
+        "n": 10000,
+        "seed": 123
+      },
+      "breakdown_bootstrap_n": 2000,
+      "alpha": 0.05,
+      "multiplicity": "Holm over the primary family; hypotheses with identical decision vectors are merged first",
+      "decision_rule": "supported improvement iff Holm-adjusted p < alpha and upper 95% CI bound < 0"
+    },
+    "hypotheses": {
+      "H1": [
+        "p4_selected",
+        "p3_frozen"
+      ],
+      "H2": [
+        "p4_selected",
+        "RR1"
+      ],
+      "H3": [
+        "p4_ablation",
+        "p3_frozen"
+      ]
+    },
+    "primary_hypothesis": "H1"
+  },
+  "split": {
+    "train_workloads": 900,
+    "validation_workloads": 300,
+    "test_workloads": 300,
+    "test_workloads_loaded_in_fit_stage": false,
+    "fresh_confirmation_set_generated_in_fit_stage": false
+  },
+  "default_quantum_q0": 1,
+  "fixed_mean_log_regret_train_val": {
+    "1": 0.031225652462339,
+    "2": 0.033543503455220565,
+    "4": 0.0393628639167901,
+    "8": 0.06379238712418099
+  },
+  "validation_criterion": "mean over validation workloads of log(T_chosen / T_q0), lower is better",
+  "controllers": {
+    "p4_selected": {
+      "regime": "online_censored",
+      "family": "logistic_classifier",
+      "params": {
+        "C": 1.0
+      },
+      "after_completions": 5,
+      "default": 1,
+      "candidates": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "features": [
+        "n_processes",
+        "arrival_span",
+        "arrival_gap_mean",
+        "arrival_gap_std",
+        "arrival_rate",
+        "priority_mean",
+        "priority_std",
+        "obs_t_decision",
+        "obs_jobs_released",
+        "obs_jobs_completed",
+        "obs_completed_burst_mean",
+        "obs_completed_burst_median",
+        "obs_completed_burst_std",
+        "obs_completed_burst_cv",
+        "obs_completed_burst_max",
+        "obs_pending_jobs",
+        "obs_pending_attained_mean",
+        "obs_busy_fraction",
+        "obs_release_rate",
+        "obs_switch_rate",
+        "obs_procs_arrived_frac",
+        "km_tau",
+        "km_censored_frac",
+        "km_surv_tau",
+        "km_rmst",
+        "km_q25",
+        "km_median",
+        "km_restricted_cv",
+        "km_rmst_over_naive_mean"
+      ],
+      "label": "online_censored/logistic_classifier, m=5 {'C': 1.0}",
+      "rules": null
+    },
+    "p4_ablation": {
+      "regime": "online_censored",
+      "family": "tree_classifier",
+      "params": {
+        "max_depth": 3,
+        "min_samples_leaf": 20
+      },
+      "after_completions": 20,
+      "default": 1,
+      "candidates": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "features": [
+        "n_processes",
+        "arrival_span",
+        "arrival_gap_mean",
+        "arrival_gap_std",
+        "arrival_rate",
+        "priority_mean",
+        "priority_std",
+        "obs_t_decision",
+        "obs_jobs_released",
+        "obs_jobs_completed",
+        "obs_completed_burst_mean",
+        "obs_completed_burst_median",
+        "obs_completed_burst_std",
+        "obs_completed_burst_cv",
+        "obs_completed_burst_max",
+        "obs_pending_jobs",
+        "obs_pending_attained_mean",
+        "obs_busy_fraction",
+        "obs_release_rate",
+        "obs_switch_rate",
+        "obs_procs_arrived_frac",
+        "km_tau",
+        "km_censored_frac",
+        "km_surv_tau",
+        "km_rmst",
+        "km_q25",
+        "km_median",
+        "km_restricted_cv",
+        "km_rmst_over_naive_mean"
+      ],
+      "label": "online_censored/tree_classifier, m=20 {'max_depth': 3, 'min_samples_leaf': 20}",
+      "rules": "|--- km_restricted_cv <= 0.605\n|   |--- km_rmst_over_naive_mean <= 1.578\n|   |   |--- arrival_gap_std <= 5.244\n|   |   |   |--- class: 8\n|   |   |--- arrival_gap_std >  5.244\n|   |   |   |--- class: 8\n|   |--- km_rmst_over_naive_mean >  1.578\n|   |   |--- obs_pending_attained_mean <= 2.730\n|   |   |   |--- class: 1\n|   |   |--- obs_pending_attained_mean >  2.730\n|   |   |   |--- class: 8\n|--- km_restricted_cv >  0.605\n|   |--- obs_completed_burst_median <= 1.750\n|   |   |--- km_surv_tau <= 0.157\n|   |   |   |--- class: 1\n|   |   |--- km_surv_tau >  0.157\n|   |   |   |--- class: 1\n|   |--- obs_completed_burst_median >  1.750\n|   |   |--- obs_release_rate <= 0.216\n|   |   |   |--- class: 1\n|   |   |--- obs_release_rate >  0.216\n|   |   |   |--- class: 1\n"
+    }
+  },
+  "validation_scores": {
+    "p4_selected": -0.005361416361860424,
+    "p4_ablation": -0.00286766403036304,
+    "p3_frozen_from_phase3_validation_table": -0.004669256406909888
+  },
+  "p3_frozen_controller": "online/tree_classifier, m=20 {'max_depth': 3, 'min_samples_leaf': 20}",
+  "logistic_coefficients": {
+    "p4_selected": {
+      "RR1": {
+        "arrival_gap_mean": -0.42076810849500484,
+        "obs_completed_burst_max": -0.36551515547002544,
+        "km_restricted_cv": 0.3191916819612923,
+        "n_processes": -0.2684621663593668,
+        "obs_procs_arrived_frac": -0.2512919244425449,
+        "arrival_gap_std": 0.24438799607326492,
+        "arrival_span": 0.23362114426011882,
+        "obs_release_rate": 0.19170308027762759,
+        "obs_completed_burst_cv": 0.15718328134280304,
+        "km_surv_tau": 0.13911333894910696,
+        "obs_pending_attained_mean": 0.11531328750192589,
+        "obs_switch_rate": -0.11420785748211673,
+        "obs_busy_fraction": 0.11308804588409788,
+        "km_median": 0.11135094917211753,
+        "missingindicator_km_q25": -0.08198697799653422,
+        "obs_completed_burst_std": 0.0785581926403737,
+        "obs_t_decision": -0.07449222083081834,
+        "km_rmst": 0.0599509160941653,
+        "priority_std": 0.0595679574484809,
+        "km_censored_frac": 0.05330263323303268,
+        "obs_completed_burst_median": 0.046201953033993125,
+        "obs_completed_burst_mean": 0.03784771907005442,
+        "missingindicator_obs_pending_attained_mean": -0.03744420744174351,
+        "km_rmst_over_naive_mean": 0.02227150712709256,
+        "obs_pending_jobs": 0.01808436322655185,
+        "obs_jobs_released": 0.018084363226550618,
+        "priority_mean": -0.017868431121644126,
+        "arrival_rate": 0.014534044560780356,
+        "km_q25": -0.009174747950962391,
+        "km_tau": 0.008609323735049806,
+        "missingindicator_km_median": 0.005417390785535871,
+        "obs_jobs_completed": 0.0
+      },
+      "RR2": {
+        "km_restricted_cv": -0.3909600375382187,
+        "obs_procs_arrived_frac": -0.38869210143376454,
+        "obs_completed_burst_cv": 0.3798048401640593,
+        "obs_completed_burst_std": 0.3353027512439813,
+        "arrival_gap_mean": 0.2900398250275267,
+        "obs_completed_burst_max": -0.2857613916350791,
+        "km_rmst": -0.2755289995457267,
+        "km_censored_frac": 0.24795558116136823,
+        "obs_release_rate": 0.2374051574865887,
+        "km_surv_tau": 0.23672768392444532,
+        "n_processes": -0.23321132458790117,
+        "km_median": -0.18585215445817174,
+        "obs_pending_attained_mean": 0.18482205130153606,
+        "obs_jobs_released": -0.1435588667116133,
+        "obs_pending_jobs": -0.14355886671161325,
+        "missingindicator_obs_pending_attained_mean": -0.14174823993639954,
+        "km_q25": 0.13791531213797725,
+        "obs_busy_fraction": -0.11284728142646623,
+        "priority_mean": 0.10777449598922402,
+        "obs_switch_rate": 0.09523213711545594,
+        "arrival_rate": 0.08496194495937769,
+        "km_rmst_over_naive_mean": 0.08420439631913276,
+        "obs_t_decision": -0.0712560218110914,
+        "priority_std": 0.04921957583707893,
+        "obs_completed_burst_median": 0.0428807515980905,
+        "arrival_gap_std": -0.03792171992564362,
+        "missingindicator_km_median": 0.027552094353928493,
+        "km_tau": -0.019092835914515847,
+        "arrival_span": -0.01705616305723682,
+        "obs_completed_burst_mean": -0.008800384227933793,
+        "missingindicator_km_q25": 0.0038486318631544996,
+        "obs_jobs_completed": 0.0
+      },
+      "RR4": {
+        "obs_completed_burst_mean": 0.7921370214452501,
+        "obs_completed_burst_median": -0.5005808028335164,
+        "obs_completed_burst_std": -0.45635727241856916,
+        "km_censored_frac": -0.2589590430156382,
+        "arrival_gap_std": -0.21367258804619665,
+        "obs_release_rate": -0.21317856916087638,
+        "obs_pending_jobs": 0.20021572670206275,
+        "obs_jobs_released": 0.20021572670206264,
+        "km_median": 0.18508383855031224,
+        "km_tau": -0.18472715785363203,
+        "obs_t_decision": -0.1775669432027009,
+        "obs_pending_attained_mean": -0.17478530378490006,
+        "obs_completed_burst_max": 0.15856222130428166,
+        "km_rmst": 0.13681459710082503,
+        "km_restricted_cv": 0.12469260668926546,
+        "km_q25": -0.11710216084775558,
+        "obs_completed_burst_cv": -0.10585309319001875,
+        "arrival_rate": -0.10159189718088045,
+        "priority_std": -0.09268168969425188,
+        "priority_mean": -0.08560513686386866,
+        "arrival_gap_mean": -0.06934204034943119,
+        "missingindicator_km_q25": 0.0629598984200048,
+        "obs_procs_arrived_frac": 0.05551300361063206,
+        "missingindicator_obs_pending_attained_mean": 0.05048275250250036,
+        "missingindicator_km_median": 0.04192052186089308,
+        "km_rmst_over_naive_mean": -0.03200249469783895,
+        "km_surv_tau": 0.029673639178109674,
+        "obs_busy_fraction": 0.0275427795317887,
+        "arrival_span": -0.02400674372944683,
+        "n_processes": 0.008713707928954054,
+        "obs_switch_rate": 0.004695993582762209,
+        "obs_jobs_completed": 0.0
+      },
+      "RR8": {
+        "obs_completed_burst_mean": -0.8211843562873691,
+        "obs_procs_arrived_frac": 0.5844710222656783,
+        "n_processes": 0.49295978301831567,
+        "obs_completed_burst_max": 0.4927143258008223,
+        "obs_completed_burst_cv": -0.4311350283168459,
+        "obs_completed_burst_median": 0.41149809820143074,
+        "km_surv_tau": -0.40551466205166353,
+        "obs_t_decision": 0.3233151858446082,
+        "obs_release_rate": -0.2159296686033363,
+        "arrival_gap_mean": 0.20007032381690784,
+        "km_tau": 0.1952106700330939,
+        "arrival_span": -0.19255823747343653,
+        "missingindicator_obs_pending_attained_mean": 0.12870969487564107,
+        "obs_pending_attained_mean": -0.1253500350185595,
+        "km_median": -0.11058263326425616,
+        "km_rmst": 0.07876348635073752,
+        "missingindicator_km_median": -0.07489000700035665,
+        "obs_pending_jobs": -0.07474122321700127,
+        "obs_jobs_released": -0.07474122321699933,
+        "km_rmst_over_naive_mean": -0.07447340874838539,
+        "km_restricted_cv": -0.052924251112337874,
+        "obs_completed_burst_std": 0.04249632853421433,
+        "km_censored_frac": -0.04229917137876606,
+        "obs_busy_fraction": -0.027783543989416883,
+        "priority_std": -0.01610584359130898,
+        "missingindicator_km_q25": 0.0151784477133765,
+        "obs_switch_rate": 0.01427972678390246,
+        "km_q25": -0.011638403339261885,
+        "arrival_gap_std": 0.0072063118985752,
+        "priority_mean": -0.004300928003713019,
+        "arrival_rate": 0.0020959076607211607,
+        "obs_jobs_completed": 0.0
+      }
+    }
+  },
+  "library_versions": {
+    "python": "3.11.9",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.4.6",
+    "pandas": "3.1.0"
+  }
+}
