@@ -1,0 +1,121 @@
+{
+  "seeds_distinct_and_unreserved": true,
+  "operating_point_assignment": true,
+  "workload_ids_unique": true,
+  "trace_hashes_unique_within_phase5": true,
+  "earlier_datasets_hashed": {
+    "phase2_train_validation_test": 1500,
+    "phase4_fresh": 600
+  },
+  "no_overlap_with_earlier_datasets": true,
+  "no_id_overlap_with_earlier_datasets": true,
+  "manifest_regenerates_exactly": true,
+  "input_traces_regenerate_exactly": true,
+  "every_workload_has_all_methods_once": true,
+  "identical_inputs_across_methods": true,
+  "throughput_and_utilization_identical_across_methods": true,
+  "oracle_is_minimum_of_fixed_quanta": true,
+  "primary_recomputation": {
+    "H1_small": {
+      "geo": -0.0005611766812896882,
+      "aggregate": -6.618641829048144e-05,
+      "scipy_permutation_p": 0.006499675016249188,
+      "scipy_bootstrap_ci": [
+        -0.0010005846710714967,
+        -0.00017786152906930017
+      ],
+      "committed_geo": -0.0005611766812896882,
+      "committed_signflip_p": 0.005229947700522995,
+      "committed_ci": [
+        -0.0010041038080864284,
+        -0.00017803576979947316
+      ]
+    },
+    "H2_small": {
+      "geo": 0.0013048779458800213,
+      "aggregate": -0.00040530899237278817,
+      "scipy_permutation_p": 0.4280785960701965,
+      "scipy_bootstrap_ci": [
+        -0.001840418721146913,
+        0.004563640314250302
+      ],
+      "committed_geo": 0.0013048779458800213,
+      "committed_signflip_p": 0.4241457585424146,
+      "committed_ci": [
+        -0.0018526188477075562,
+        0.0044820750469021535
+      ]
+    },
+    "H1_medium": {
+      "geo": -0.003015875333046951,
+      "aggregate": -0.0012239461664703688,
+      "scipy_permutation_p": 0.0103994800259987,
+      "scipy_bootstrap_ci": [
+        -0.00538404188512548,
+        -0.0007549292895944051
+      ],
+      "committed_geo": -0.003015875333046951,
+      "committed_signflip_p": 0.009459905400945991,
+      "committed_ci": [
+        -0.005341422863042719,
+        -0.0008223554358014899
+      ]
+    },
+    "H2_medium": {
+      "geo": -0.0003834789218231158,
+      "aggregate": 0.001156548846586336,
+      "scipy_permutation_p": 0.8251587420628969,
+      "scipy_bootstrap_ci": [
+        -0.003780902568676754,
+        0.0030077700729955396
+      ],
+      "committed_geo": -0.0003834789218231158,
+      "committed_signflip_p": 0.8227517724822752,
+      "committed_ci": [
+        -0.0037909977744790694,
+        0.0029687138688882283
+      ]
+    },
+    "H1_large": {
+      "geo": -0.004887212079990997,
+      "aggregate": -0.0027648808948956827,
+      "scipy_permutation_p": 9.99950002499875e-05,
+      "scipy_bootstrap_ci": [
+        -0.007270798246093269,
+        -0.0026443655535295023
+      ],
+      "committed_geo": -0.004887212079990997,
+      "committed_signflip_p": 4.999950000499995e-05,
+      "committed_ci": [
+        -0.0072034077028629824,
+        -0.002635752511934958
+      ]
+    },
+    "H2_large": {
+      "geo": -0.0009789107152813545,
+      "aggregate": -0.0002355964516451703,
+      "scipy_permutation_p": 0.5748712564371782,
+      "scipy_bootstrap_ci": [
+        -0.004449785194226013,
+        0.0024301819820530513
+      ],
+      "committed_geo": -0.0009789107152813545,
+      "committed_signflip_p": 0.5785342146578534,
+      "committed_ci": [
+        -0.004465079816851948,
+        0.0023757580295154595
+      ]
+    }
+  },
+  "primary_max_abs_differences": {
+    "geo": 0.0,
+    "agg": 0.0,
+    "p": 0.003932837527781896,
+    "ci": 8.156526734814842e-05
+  },
+  "primary_point_estimates_match": true,
+  "primary_pvalues_match_within_monte_carlo_error": true,
+  "primary_cis_match_within_monte_carlo_error": true,
+  "holm_recomputed_matches": true,
+  "all_pass": true
+}

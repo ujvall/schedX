@@ -12,6 +12,31 @@ and experimentally compare adaptive scheduling against classic algorithms.
 
 ## Status
 
+**Phase 5 — principal experiment at three operating points: complete.**
+
+* Three operating points with independently generated workloads: 6, 14,
+  and 22 processes per workload, 1,000 workloads each (seeds 5101–5103).
+  Only the process count differs from the Phase 2 generator rules.
+* The frozen Phase 3 and Phase 4 controllers, RR1/RR2/RR4/RR8, and a
+  non-deployable oracle all schedule identical job lists (hash-verified).
+  The protocol (estimands, sign-flip tests, paired bootstrap CIs, Holm, a
+  1% smallest effect of interest) was committed before the run.
+* **Result:**
+  * The **frozen Phase 3 controller beats RR1 at every operating point**:
+    geometric-mean change in turnaround −0.06%, −0.30%, −0.49% (Holm
+    p = 0.026, 0.038, 0.0003). Every confidence interval stays above −1%,
+    so the improvement is statistically supported but **below the
+    pre-declared practical threshold**, and it costs response time.
+  * The **Phase 4 controller's difference from RR1 is practically
+    negligible** at every operating point.
+  * A per-workload oracle would gain 2.4–3.3%.
+* Raw CSVs (inputs, seed manifest, per-workload outcomes), figures, and an
+  independent robustness audit are in `reports/phase5/`.
+
+Details: [docs/phase5_experimental_protocol.md](docs/phase5_experimental_protocol.md),
+[docs/phase5_robustness.md](docs/phase5_robustness.md), and
+[reports/phase5/summary.md](reports/phase5/summary.md).
+
 **Phase 4 — improved online workload estimation: complete.**
 
 * Completed bursts seen online are length-biased: short ones finish first.
@@ -112,13 +137,16 @@ src/schedx/
   phase3.py       Phase 3 fit/select and test-stage pipeline           (Phase 3)
   estimator.py    Kaplan-Meier estimate of unfinished bursts           (Phase 4)
   phase4.py       Phase 4 fit/select, inference, and analysis          (Phase 4)
-configs/              phase2.json, phase3.json, phase4.json
+  phase5.py       operating-point generation, pairing, and analysis    (Phase 5)
+configs/              phase2.json, phase3.json, phase4.json, phase5.json
 scripts/              demo, generate_dataset, train_evaluate, plot_results, predict,
                       phase3_train, phase3_evaluate, phase3_plots, audit_phase3,
-                      phase4_baseline, phase4_train, phase4_evaluate, phase4_plots
+                      phase4_baseline, phase4_train, phase4_evaluate, phase4_plots,
+                      phase5_run, phase5_plots, phase5_audit
 reports/phase2/       generated metrics.json, summary.md, figures (committed)
 reports/phase3/       frozen controller, validation table, test results, figures, audit/ (committed)
 reports/phase4/       baseline check, frozen controller, estimator diagnostic, results, figures (committed)
+reports/phase5/       seed manifest, input traces, raw per-workload results, comparisons, figures, audit (committed)
 artifacts/            generated dataset, models, predictions (not committed)
 tests/                pytest suite
 docs/                 architecture, Phase 2 design/results, data dictionary
@@ -232,6 +260,21 @@ python scripts/phase4_plots.py      # -> reports/phase4/figures/*.png
 `phase4_evaluate.py` refuses to run if any configuration or the dataset
 changed after freezing.
 
+## Reproducing Phase 5
+
+Requires the Phase 2 dataset and the frozen Phase 3 and Phase 4
+controllers. `artifacts/` is not committed, so rebuild it first (the scripts
+check the frozen hashes):
+
+```bash
+python scripts/generate_dataset.py
+python scripts/phase3_train.py
+python scripts/phase4_train.py
+python scripts/phase5_run.py      # -> reports/phase5/ (manifest, inputs, raw CSVs, results.json, summary.md)
+python scripts/phase5_plots.py    # -> reports/phase5/figures/*.png
+python scripts/phase5_audit.py    # -> reports/phase5/robustness_checks.json
+```
+
 ## Limitations
 
 * The Phase 1 simulator schedules CPU bursts only: no I/O blocking, one
@@ -242,6 +285,8 @@ changed after freezing.
 * Phase 3 uses an open-loop CPU-only projection with free context switches
   and decides once per workload; see `docs/phase3_adaptive_scheduling.md` §12.
   Phase 4 shares these limits; see `docs/phase4_observation_model.md` §10.
+  Phase 5 uses the same simulator; its requirement status and remaining gaps
+  are in `docs/phase5_robustness.md` §7.
 * Single CPU.
 * Context-switch overhead is counted but takes zero simulated time.
 * Integer time only.
@@ -258,6 +303,10 @@ changed after freezing.
 4. ~~Censoring-aware online observation with a frozen, pre-specified
    comparison and a fresh confirmation set~~ (Phase 4; no supported
    improvement)
-5. Candidate next steps: switching-aware selection criteria, periodic
+5. ~~Principal experiment at three independent operating points with
+   frozen controllers~~ (Phase 5; small, statistically supported Phase 3
+   benefit below the practical threshold)
+6. Eight-page case-study report (outline in `docs/phase5_robustness.md` §9;
+   not yet written)
+7. Candidate next steps: switching-aware selection criteria, periodic
    re-decision, context-switch overhead, I/O-aware simulation
-6. Interactive dashboard (Streamlit)

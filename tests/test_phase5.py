@@ -179,3 +179,60 @@ def test_run_refuses_mismatched_frozen_hash(tiny_run):
     r = subprocess.run([sys.executable, str(ROOT / "scripts" / "phase5_run.py"), "--config", str(tmp / "bad.json"),
                         "--reports", str(tmp / "rbad")], capture_output=True, text=True)
     assert r.returncode != 0 and "frozen controllers" in r.stderr
+
+
+# --- Committed Phase 5 evidence ---------------------------------------------------------------
+
+P5 = ROOT / "reports" / "phase5"
+committed = pytest.mark.skipif(not (P5 / "raw_workload_results.csv").exists(), reason="Phase 5 not run")
+
+
+@committed
+def test_committed_manifest_matches_protocol():
+    man = pd.read_csv(P5 / "workload_manifest.csv")
+    for name, op in CFG5["operating_points"].items():
+        sub = man[man.operating_point == name]
+        assert len(sub) == op["n_workloads"] == 1000
+        assert (sub.n_processes == op["n_processes"]).all() and (sub.master_seed == op["master_seed"]).all()
+        assert sorted(sub.workload_index) == list(range(op["n_workloads"]))
+    assert man.workload_id.is_unique and man.trace_sha256.is_unique
+
+
+@committed
+def test_committed_raw_results_are_paired_and_complete():
+    man = pd.read_csv(P5 / "workload_manifest.csv").set_index("workload_id")
+    raw = pd.read_csv(P5 / "raw_workload_results.csv")
+    assert len(raw) == 7 * len(man)
+    g = raw.groupby("workload_id")
+    assert (g.size() == 7).all() and (g.input_jobs_sha256.nunique() == 1).all()
+    assert (g.input_jobs_sha256.first() == man.loc[g.size().index, "jobs_sha256"]).all()
+    assert (raw.operating_point == raw.workload_id.map(man.operating_point)).all()
+
+
+@committed
+def test_committed_tables_agree_with_results_json():
+    res = json.loads((P5 / "results.json").read_text(encoding="utf-8"))
+    comp = pd.read_csv(P5 / "comparisons.csv").set_index("hypothesis")
+    for fam in ("primary_family", "secondary_family"):
+        for h, c in res[fam].items():
+            row = comp.loc[h]
+            assert row.geo_mean_change == pytest.approx(c["geo_rel_change"], abs=1e-15)
+            assert row.holm_p == pytest.approx(c["holm_p"], abs=1e-15)
+            assert row.classification == c["classification"]
+    assert len(res["primary_family"]) + sum(len(c["merged_with"]) for c in res["primary_family"].values()) == 6
+    raw = pd.read_csv(P5 / "raw_workload_results.csv")
+    T = raw.pivot(index="workload_id", columns="method", values="avg_turnaround")
+    man = pd.read_csv(P5 / "workload_manifest.csv")
+    ids = man.loc[man.operating_point == "large", "workload_id"]
+    geo = float(np.expm1(np.log(T.loc[ids, "p3_frozen"] / T.loc[ids, "RR1"]).mean()))
+    assert geo == pytest.approx(res["primary_family"]["H1_large"]["geo_rel_change"], abs=1e-15)
+
+
+@committed
+def test_committed_robustness_audit_passed_and_config_recorded():
+    checks = json.loads((P5 / "robustness_checks.json").read_text(encoding="utf-8"))
+    assert checks["all_pass"] is True
+    env = json.loads((P5 / "environment.json").read_text(encoding="utf-8"))
+    for k, v in CFG5["frozen_controllers"].items():
+        assert env["frozen_controllers"][k]["config_hash"] == v["config_hash"]
+    assert env["operating_points"] == CFG5["operating_points"]
