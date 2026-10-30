@@ -18,12 +18,11 @@ personal action or confirmation before submission.
 
 ## You must act on or confirm
 
-1. **AI-generated content.** This draft was written by an AI assistant. The
-   course limits AI-generated content to under 10%, so **this text cannot be
-   submitted as it is**. Use it as a fact base: rewrite it in your own words,
-   make sure you can explain and defend every sentence, then remove the
-   "Draft status" box at the top. No detector score can be predicted or
-   promised.
+1. **AI-generated content.** This text, including its plainer rewording, was
+   written by an AI assistant. The course limits AI-generated content to under
+   10%, so **rewording by AI does not bring it within that limit**. Use it as a
+   fact base: rewrite it in your own words and make sure you can explain and
+   defend every sentence. No detector score can be predicted or promised.
 2. **AI-use disclosure (Section IX).** Check what your course or university
    requires, then edit the disclosure. Keep it factual: the code, tests, and
    documentation were developed with substantial AI assistance. Fill in the
@@ -33,9 +32,9 @@ personal action or confirmation before submission.
 4. **Contribution statement.** Confirm "individual project by Ujval Sai" and
    that `cremebits` is your Git identity.
 5. **Format and page-limit rules.** If your course requires IEEE's official
-   Word template or A4 paper, tell me or paste the text into it. Remove the
-   draft box and, if your course follows IEEE strictly, the tagline under the
-   title. At 4 pages the report is within the limit either way.
+   Word template or A4 paper, tell me or paste the text into it. If your course
+   follows IEEE strictly, remove the tagline under the title. At 4 pages the
+   report is within the limit either way.
 6. **Plagiarism check.** Run the institution's tool on your final rewritten
    version.
 
@@ -58,6 +57,6 @@ personal action or confirmation before submission.
 
 ## Writing-style note
 
-No humanization or academic-editing skill is installed in this environment,
-and none was used. The draft is written plainly, in a neutral voice ("SchedX
-implements…"), and makes no first-person claims about who wrote the code.
+No humanization tool or academic-editing skill was used. The wording was
+simplified for readability, not to avoid AI detection, and uses "we" only for
+the project's method. Section IX states the AI assistance.

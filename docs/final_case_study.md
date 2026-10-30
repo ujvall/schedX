@@ -8,36 +8,34 @@ Individual project · [Course name and code] · [Instructor] · [University] · 
 
 Repository: https://github.com/ujvall/schedX · Reproducibility reference: commit `e848cf2` (https://github.com/ujvall/schedX/commit/e848cf2)
 
-> **Draft status (remove before submission):** this text was drafted with an AI assistant from the project's committed evidence. Under a course rule limiting AI-generated content, it must be rewritten in the author's own words and checked against the institution's AI-use policy before it is submitted. See the disclosure in Section IX.
-
 ## Abstract
 
-Round Robin (RR) scheduling needs a time quantum. Small quanta give quick first responses and help short jobs; large quanta reduce context switching and suit workloads of similar-length jobs. This case study asks whether predicting workload behaviour can choose the quantum better than a fixed setting. SchedX is a reproducible discrete-event CPU scheduling simulator with five classical algorithms, a synthetic workload generator, and machine-learning (ML) controllers that select an RR quantum per workload from information available at decision time. Controllers were selected on validation data and frozen before testing. The principal experiment evaluated them on three independently generated operating points of 6, 14, and 22 processes per workload, with 1,000 workloads each. The frozen controller reduced per-workload mean turnaround compared with the best fixed quantum (RR1) at every operating point, by 0.06%, 0.30%, and 0.49% (geometric means). These reductions are statistically supported after Holm correction, but all lie below the pre-declared 1% practical threshold, and the controller increases mean response time. A censoring-aware estimator improved online estimates but not decisions. All results come from a CPU-only simulator with synthetic workloads; no kernel or hardware experiment was performed.
+Round Robin (RR) scheduling depends on a time quantum, and there is no single value that suits everything. A small quantum gets jobs started quickly and helps short ones, while a large quantum cuts down on context switches and works well when jobs are about the same length. This case study looks at whether predicting how a workload behaves can pick a better quantum than a fixed setting. To test this, SchedX combines a repeatable discrete-event simulator, five classical scheduling algorithms, a synthetic workload generator, and machine-learning (ML) controllers that choose a quantum using only what is known at decision time. The controllers were chosen on validation data and frozen before testing. The main experiment ran them at three operating points of 6, 14, and 22 processes per workload, with 1,000 independently generated workloads at each. Compared with the best fixed quantum (RR1), the frozen controller lowered per-workload mean turnaround by 0.06%, 0.30%, and 0.49% (geometric means). These gains hold up after Holm correction, but all of them fall short of the 1% practical threshold set in advance, and mean response time gets worse. A censoring-aware estimator gave better online estimates but no better decisions. Everything here comes from a CPU-only simulator running synthetic workloads; nothing was measured on a real kernel or on hardware.
 
 **Index Terms**—CPU scheduling, Kaplan–Meier estimator, machine learning, paired statistical testing, Round Robin, simulation, time quantum
 
 ## I. Problem Statement and Objectives
 
-Operating systems commonly use time-sliced scheduling. The quantum length is a compromise: very small quanta approach equal sharing of the CPU but cause many context switches, while very large quanta make RR behave like first-come, first-served (FCFS) [1]. No single fixed quantum is best for every workload. This raises the question of whether a scheduler that *predicts* workload behaviour can make a better choice.
+Most operating systems share the CPU by giving each job a slice of time, and the length of that slice is a compromise. Make it very small and jobs share the CPU almost evenly, but the system spends a lot of its effort switching between them. Make it very large and RR ends up behaving like first-come, first-served (FCFS) [1]. Since no fixed quantum is best for every workload, it is natural to ask whether a scheduler that *predicts* workload behaviour could choose better.
 
-**Research question.** Can process-behaviour prediction improve scheduling-policy or time-quantum decisions compared with fixed, rule-based CPU scheduling?
+**Research question.** Can predicting process behaviour lead to better scheduling-policy or time-quantum decisions than fixed, rule-based CPU scheduling?
 
 **Objectives.**
 
-1. Build a reproducible simulator with classical algorithms and shared metric definitions.
-2. Generate labelled synthetic workloads, and test whether workload behaviour can be predicted from information a scheduler would actually have.
-3. Use those predictions to choose an RR quantum, and compare the result fairly with fixed quanta.
-4. Validate the frozen controllers at three independent workload sizes.
+1. Build a repeatable simulator with the classical algorithms and one shared set of metrics.
+2. Generate labelled synthetic workloads and test whether their behaviour can be predicted from information a scheduler would really have.
+3. Use those predictions to choose an RR quantum, then compare the result fairly against fixed quanta.
+4. Test the frozen controllers at three independent workload sizes.
 
 ## II. Background and Related Work
 
-Shortest Remaining Time First (SRTF) minimises mean turnaround on a single processor when job lengths are known [3]. A real scheduler does not know future CPU burst lengths, which is why practical schedulers fall back on non-clairvoyant policies such as RR. Queueing analyses of time-shared systems have long studied how quantum size affects delay [2], and textbooks describe the same trade-off between response time and switching overhead [1]. Machine-learning techniques have also been applied to process scheduling, for example in work on Linux process scheduling [12]. This project does not propose a new scheduling algorithm. Its contribution is a controlled, leakage-safe evaluation of whether learned quantum selection helps, including a negative result.
+If job lengths are known in advance, Shortest Remaining Time First (SRTF) gives the lowest possible mean turnaround on a single processor [3]. A real scheduler doesn't know how long the next CPU burst will be, which is why policies like RR that don't need this knowledge are used in practice. How the quantum affects delay has been studied for a long time through queueing analyses of time-shared systems [2], and textbooks describe the same trade-off between response time and switching overhead [1]. Machine learning has also been tried on this kind of problem, including for Linux process scheduling [12]. This project doesn't propose a new scheduling algorithm. What it adds is a controlled test, with safeguards against data leakage, of whether learned quantum selection actually helps, and it reports the result even though it is mostly negative.
 
 ## III. SchedX Design
 
 ### A. Simulator and Algorithms
 
-The simulator is a deterministic discrete-event model of one CPU with integer time ticks. It implements FCFS, non-preemptive Shortest Job First (SJF), SRTF, RR, and Priority scheduling (non-preemptive and preemptive), with documented tie-breaking. An adaptive RR variant allows the quantum to change during a run. A slice that has already started keeps its quantum, and with a constant quantum it reproduces ordinary RR exactly (tested). Context switches are counted but cost zero time.
+The simulator is a deterministic discrete-event model of a single CPU, with time counted in whole ticks. It implements FCFS, non-preemptive Shortest Job First (SJF), SRTF, RR, and Priority scheduling (both non-preemptive and preemptive), and its tie-breaking rules are documented. An adaptive version of RR lets the quantum change during a run. A slice that has already started keeps its quantum, and with a constant quantum this version matches ordinary RR exactly, which the tests confirm. Context switches are counted but take no simulated time.
 
 **Metrics.** For each job:
 
@@ -45,30 +43,30 @@ The simulator is a deterministic discrete-event model of one CPU with integer ti
 * waiting = turnaround − CPU time;
 * response = first dispatch − release.
 
-Throughput and CPU utilization are measured over the interval from the first arrival to the last completion. A context switch is counted when a different job is dispatched.
+Throughput and CPU utilization are measured from the first arrival to the last completion. A context switch is counted whenever a different job is dispatched.
 
 ### B. From Workloads to Jobs
 
-Each generated process alternates CPU bursts and I/O waits. For scheduling, every CPU burst becomes one job, released at the time it would start if there were no contention (the *burst-trace projection*). I/O is recorded but not simulated as blocking, so this is a CPU-only, open-loop model.
+Each generated process alternates between CPU bursts and I/O waits. For scheduling, every CPU burst becomes its own job, released at the moment it would start if nothing else were competing for the CPU (we call this the *burst-trace projection*). I/O is recorded but never blocks anything, so this is a CPU-only, open-loop model.
 
 ### C. Prediction and Control
 
 * **Workload classifiers.** Logistic Regression, Decision Tree, and Random Forest models (scikit-learn [4]; Random Forest [5]) predict whether a workload is CPU-bound, I/O-bound, or mixed.
-* **Quantum controller.** The scheduler starts with RR1, the best fixed quantum on training and validation data. After a fixed number of job completions, it builds features from the schedule that has actually run, decides once whether to keep RR1 or switch to another quantum in {2, 4, 8}, and continues. If no decision point is reached, it keeps RR1. A whitelist blocks any feature not available at decision time.
-* **Censoring-aware estimator.** Under RR1 the short jobs finish first, so completed bursts are a biased sample. The estimator treats each unfinished job as *right-censored*: its burst is known to exceed the CPU time it has received so far. It uses the Kaplan–Meier estimator [6] and reports, instead of extrapolating, the probability mass it cannot identify.
+* **Quantum controller.** The scheduler starts on RR1, the best fixed quantum on the training and validation data. After a set number of jobs have finished, it builds features from the schedule that has actually run so far, decides once whether to stay on RR1 or move to a quantum in {2, 4, 8}, and carries on. If a workload ends before that point, it simply stays on RR1. A whitelist blocks any feature that wouldn't be available at decision time.
+* **Censoring-aware estimator.** Under RR1 the short jobs finish first, so the completed bursts are not a fair sample of all bursts. The estimator treats each unfinished job as *right-censored*: all we know is that its burst is longer than the CPU time it has had so far. It applies the Kaplan–Meier estimator [6] and, rather than guessing at what it can't see, reports how much of the distribution is still unknown.
 
 ## IV. Data and Methodology
 
 ### A. Workloads and Labels
 
-A seeded generator creates each workload independently from the pair (master seed, index):
+A seeded generator builds each workload independently from a (master seed, index) pair, using:
 
 * process counts of 4–24;
-* exponential inter-arrival gaps;
-* CPU-heavy or I/O-heavy processes;
-* Gamma-distributed integer bursts with workload-specific variability.
+* exponential gaps between arrivals;
+* a mix of CPU-heavy and I/O-heavy processes;
+* Gamma-distributed integer bursts, with variability that differs per workload.
 
-Labels are computed from the realized traces, not from the generator's intent. A process is I/O-bound if more than half its time is I/O. A workload is CPU-bound if at most 25% of its processes are I/O-bound, I/O-bound if at least 75% are, and mixed otherwise. The development dataset has 1,500 workloads (21,453 processes; 484 CPU-bound, 527 I/O-bound, 489 mixed), split by workload into 900 training, 300 validation, and 300 test workloads, stratified by class.
+Labels come from the traces that were actually generated, not from what the generator was aiming for. A process is I/O-bound if more than half its time is I/O. A workload is CPU-bound if at most 25% of its processes are I/O-bound, I/O-bound if at least 75% are, and mixed otherwise. The development dataset has 1,500 workloads (21,453 processes; 484 CPU-bound, 527 I/O-bound, 489 mixed), split by workload into 900 training, 300 validation, and 300 test workloads, with class proportions kept equal across the splits.
 
 ### B. Information Available to the Scheduler
 
@@ -84,20 +82,20 @@ Labels are computed from the realized traces, not from the generator's intent. A
 
 ### C. Evaluation Protocol
 
-All learning used training data, all selection used validation data, and each controller was committed in Git before any test evaluation. Every comparison is *paired*: each method schedules the identical job list of a workload, and the principal experiment records a hash of each method's input to prove it. The primary outcome is each workload's mean job turnaround, `T`.
+Models were trained on training data and chosen on validation data, and each controller was committed to Git before any test run. All comparisons are *paired*: every method schedules exactly the same job list for a given workload, and the main experiment stores a hash of each method's input so this can be checked. The main outcome is each workload's mean job turnaround, `T`.
 
-Two summaries are reported:
+We report it in two ways:
 
-* **Geometric-mean change** (the pre-specified estimand): the geometric mean over workloads of `T_method / T_baseline`, minus 1. Each workload counts equally, whatever its size.
-* **Aggregate change:** the change in mean turnaround across all workloads, which weights long-running workloads more.
+* **Geometric-mean change** (the measure fixed in advance): the geometric mean over workloads of `T_method / T_baseline`, minus 1. Every workload counts equally, whatever its size.
+* **Aggregate change:** the change in mean turnaround across all workloads, which gives long-running workloads more weight.
 
-Tests are two-sided paired sign-flip permutation tests of the mean log ratio [8]. Confidence intervals are paired percentile bootstrap intervals with 10,000 resamples [7]. Holm's procedure [9] corrects for multiple comparisons within pre-specified families. A result counts as **practically meaningful** only if the whole 95% CI lies below −1%, a smallest effect of interest set before the experiment at about one third of the oracle headroom (Section V-B).
+Significance comes from two-sided paired sign-flip permutation tests of the mean log ratio [8], and confidence intervals from a paired percentile bootstrap with 10,000 resamples [7]. Holm's procedure [9] corrects for multiple comparisons within families of hypotheses chosen in advance. We only call a result **practically meaningful** if the whole 95% CI lies below −1%. That threshold was set before the experiment, at about a third of what an oracle could gain (Section V-B).
 
-### D. Principal Experiment: Three Operating Points
+### D. Main Experiment: Three Operating Points
 
-Three new workload sets were generated with the same generator rules. Only the number of processes per workload changes. All three sizes lie inside the controllers' training range, so nothing is extrapolated.
+Three new sets of workloads were generated under the same rules, changing only the number of processes per workload. All three sizes are inside the range the controllers were trained on, so no extrapolation is involved.
 
-**TABLE II.** Principal-experiment operating points.
+**TABLE II.** Operating points in the main experiment.
 
 | Operating point | Processes per workload | Workloads | Master seed | Total jobs |
 |---|---|---|---|---|
@@ -105,19 +103,19 @@ Three new workload sets were generated with the same generator rules. Only the n
 | Medium | 14 | 1,000 | 5102 | 77,567 |
 | Large | 22 | 1,000 | 5103 | 121,900 |
 
-None of the 3,000 workloads matches any of the 2,100 workloads used earlier, compared by hashes of their full input traces.
+None of the 3,000 workloads matches any of the 2,100 used earlier, based on hashes of their full input traces.
 
 ## V. Results
 
 ### A. Development Results
 
-**Classification (Phase 2).** On the 300 test workloads, Logistic Regression (chosen by validation score) reached 87.6% accuracy (macro-F1 0.874), the Decision Tree 86.4%, and the Random Forest 89.2%. Mapping the predicted class to a policy did not reliably beat a fixed RR2: every 95% CI of the regret difference included zero.
+**Classification (Phase 2).** On the 300 test workloads, Logistic Regression (chosen by validation score) reached 87.6% accuracy (macro-F1 0.874), the Decision Tree 86.4%, and the Random Forest 89.2%. Even so, using the predicted class to pick a policy did not reliably beat a fixed RR2: every 95% CI for the regret difference included zero.
 
-**Quantum controller (Phase 3).** On the 300 test workloads the controller changed turnaround by −0.38% (95% CI −0.75% to −0.04%) compared with RR1. The pre-specified Wilcoxon signed-rank test with Pratt's zero handling [10, 11] gave p = 0.50. A later audit showed that the two procedures target different quantities: the bootstrap describes the *mean* log ratio, while the rank test, with 275 of 300 pairs tied, behaves almost like a sign test. The result was therefore treated as inconclusive.
+**Quantum controller (Phase 3).** On the same 300 test workloads, the controller changed turnaround by −0.38% (95% CI −0.75% to −0.04%) compared with RR1, yet the Wilcoxon signed-rank test we had planned to use, with Pratt's handling of zeros [10, 11], gave p = 0.50. A later audit explained the mismatch. The bootstrap describes the *mean* log ratio, whereas the rank test, with 275 of 300 pairs tied, behaves almost like a sign test. We therefore treated this result as inconclusive.
 
-**Estimator (Phase 4).** On training data, the Kaplan–Meier estimator cut the error of the estimated restricted mean burst from 0.43–0.50 to 0.08–0.10 (mean absolute log error). Decisions did not improve. Against the Phase 3 controller, the estimator-based controller changed turnaround by +0.64% (95% CI +0.02% to +1.28%, Holm p = 0.14) on the established test split and by +0.08% (95% CI −0.35% to +0.51%) on 600 fresh workloads.
+**Estimator (Phase 4).** On training data, the Kaplan–Meier estimator cut the error in the estimated restricted mean burst from 0.43–0.50 to 0.08–0.10 (mean absolute log error), but better estimates did not lead to better decisions. Against the Phase 3 controller, the estimator-based controller changed turnaround by +0.64% (95% CI +0.02% to +1.28%, Holm p = 0.14) on the established test split and by +0.08% (95% CI −0.35% to +0.51%) on 600 fresh workloads.
 
-### B. Principal Experiment
+### B. Main Experiment
 
 **TABLE III.** Change in turnaround compared with RR1 (negative = faster; 95% CIs in brackets; Holm correction over six primary hypotheses).
 
@@ -130,48 +128,48 @@ None of the 3,000 workloads matches any of the 2,100 workloads used earlier, com
 | 14 | Phase 4 | −0.04% [−0.38, +0.30] | +0.12% | 1.00 | negligible |
 | 22 | Phase 4 | −0.10% [−0.45, +0.24] | −0.02% | 1.00 | negligible |
 
-![Fig. 1. (a) Geometric-mean change in per-workload turnaround compared with RR1, with 95% paired bootstrap CIs; dashed lines mark the ±1% practical threshold. (b) The Phase 3 controller next to the non-deployable per-workload oracle. Drawn from reports/phase5/results.json by docs/case_study_build/report_figures.py.](case_study_build/fig_effects.png)
+![Fig. 1. (a) Geometric-mean change in per-workload turnaround compared with RR1, with 95% paired bootstrap CIs; dashed lines mark the ±1% practical threshold. (b) The Phase 3 controller alongside the per-workload oracle, which could not be deployed. Drawn from reports/phase5/results.json by docs/case_study_build/report_figures.py.](case_study_build/fig_effects.png)
 
-The Phase 3 controller improved on RR1 at every size, and the benefit grew with the number of processes. At 22 processes the aggregate change of −0.28% corresponds to mean turnaround falling from 305.70 to 304.85 ticks. The controller changed the quantum on only 3.2%, 7.7%, and 10.3% of workloads. At 6 processes, 13.2% of workloads ended before the decision point and kept RR1. A per-workload *oracle* that knows every fixed quantum's outcome would gain 3.25%, 2.73%, and 2.40%, so most of the available improvement is not captured. The Phase 4 controller switched far more often (29–42% of workloads) without a measurable turnaround benefit.
+The Phase 3 controller beat RR1 at every size, and the gain grew as the number of processes went up. At 22 processes, the aggregate change of −0.28% means mean turnaround fell from 305.70 to 304.85 ticks. The controller rarely acted, changing the quantum on just 3.2%, 7.7%, and 10.3% of workloads. At 6 processes, 13.2% of workloads finished before the decision point and stayed on RR1. An *oracle* that knows how every fixed quantum would turn out on each workload would gain 3.25%, 2.73%, and 2.40%, so most of the possible improvement is still left on the table. The Phase 4 controller switched far more often (29–42% of workloads) with no measurable turnaround benefit.
 
 ### C. Secondary Outcomes
 
 ![Fig. 2. Increase in mean response time compared with RR1 (ticks, 95% paired bootstrap CIs) at each operating point. Same source and script as Fig. 1.](case_study_build/fig_response.png)
 
-* **Response time.** The Phase 3 controller increased mean response time compared with RR1 by +0.03 ticks (6 processes), +2.57 ticks [1.98, 3.19] (14), and +10.36 ticks [8.42, 12.32] (22). Switching to a larger quantum delays the first dispatch of waiting jobs. The Phase 4 controller's increases (+3.8, +15.2, +33.7 ticks) were similar to those of a fixed RR2.
-* **Context switches.** The Phase 3 controller reduced them slightly (for example, from 891.1 to 848.1 per workload at 22 processes).
-* **Throughput and CPU utilization.** These were identical for every method within each operating point (for example, 0.150 jobs per tick and 98.7% utilization at 22 processes). This is expected: every policy is work-conserving and receives the same jobs.
+* **Response time.** The Phase 3 controller raised mean response time compared with RR1 by +0.03 ticks (6 processes), +2.57 ticks [1.98, 3.19] (14), and +10.36 ticks [8.42, 12.32] (22). This makes sense, since a larger quantum means waiting jobs get their first turn later. The Phase 4 controller's increases (+3.8, +15.2, +33.7 ticks) were close to those of a fixed RR2.
+* **Context switches.** The Phase 3 controller reduced these slightly (for example, from 891.1 to 848.1 per workload at 22 processes).
+* **Throughput and CPU utilization.** These did not change between methods at any operating point (for example, 0.150 jobs per tick and 98.7% utilization at 22 processes). That is expected, because every policy keeps the CPU busy whenever work is waiting and all of them receive the same jobs.
 
 ## VI. Discussion
 
-**Statistical versus practical significance.** With 1,000 paired workloads per size, the experiment can detect very small effects. The Phase 3 benefit is real in the statistical sense, consistent across sizes, and replicated on new data, but it is under half a percent. Pooled with equal weight across the three sizes it is −0.28% (95% CI −0.39% to −0.17%). The cost in response time is larger in relative terms. A practitioner could reasonably prefer a fixed RR1.
+**Statistical versus practical significance.** With 1,000 paired workloads per size, the experiment can pick up very small effects. The Phase 3 benefit is statistically real, shows up at all three sizes, and appeared again on new data, but it stays under half a percent. Pooled with equal weight across the sizes, it is −0.28% (95% CI −0.39% to −0.17%). The response-time cost is larger in relative terms, so someone running a real system could reasonably prefer to stay on a fixed RR1.
 
-**Why the gains are small.** On training data the true variability of job lengths was strongly related to whether a large quantum beats RR1 (Spearman 0.79), but the variability *observed* at decision time was only moderately related (0.46). A small default quantum hides long jobs until late in the run, so the controller sees mostly short bursts and switches rarely. The censoring-aware estimator corrected the bias in the part of the distribution it can see. It could not recover the unseen long tail, and it led to more frequent switches that won and lost about equally.
+**Why the gains are small.** On training data, the true variability of job lengths was strongly related to whether a large quantum beats RR1 (Spearman 0.79), but the variability *observed* at decision time was only moderately related (0.46). With a small default quantum, long jobs stay hidden until late in the run, so the controller mostly sees short bursts and rarely switches. The censoring-aware estimator fixed the bias in the part of the distribution it can see, but it could not recover the long tail it can't see, and the extra switches it caused won about as often as they lost.
 
-**Why the negative result matters.** A weak signal is easy to overstate, for example by using features that would not exist at decision time (category B) or by tuning on test data. The study's controls (frozen controllers, paired inputs, pre-specified statistics, independent operating points) guard against both, so its conclusion is defensible: within this simulator, learned quantum selection gives at most a small turnaround gain and costs response time.
+**Why a negative result still matters.** A weak signal is easy to overstate, for example by using features that wouldn't exist at decision time (category B) or by tuning on test data. Frozen controllers, paired inputs, statistics fixed in advance, and independent operating points guard against both, so the conclusion can be trusted within its limits: in this simulator, learned quantum selection gives at most a small turnaround gain, and it costs response time.
 
 ## VII. Limitations and Threats to Validity
 
-1. **Synthetic workloads** from a single generator family; no real process traces.
-2. **Simulator only.** The model is CPU-only and open-loop: I/O does not block and contention does not delay later bursts. Context switches cost nothing, so RR1's many switches are free here but would not be on real hardware. **No kernel-level or hardware measurement was performed.**
-3. **One decision per workload**, and the default quantum limits what can be observed.
-4. **The 1% threshold** is a pre-declared judgement; other thresholds would change the "practical" label, though not the estimates.
-5. **Test reuse.** The Phase 3 test split was reused in Phase 4. Fresh workloads (Phase 4) and the independent operating points (Phase 5) address this.
-6. **Reproduction was verified on one environment** (Windows, Python 3.11.9); other platforms and library versions are untested.
+1. **Synthetic workloads.** Everything comes from one family of generated workloads, with no real process traces.
+2. **Simulator only.** The model is CPU-only and open-loop: I/O doesn't block, and contention doesn't delay later bursts. Context switches are free here, which flatters RR1 because it switches so often. **No kernel-level or hardware measurement was performed.**
+3. **One decision per workload.** The controller decides only once, and the default quantum limits what it can see before then.
+4. **The 1% threshold** is a judgement call made in advance. A different threshold would change the "practical" label but not the estimates.
+5. **Test reuse.** The Phase 3 test split was used again in Phase 4. The fresh workloads in Phase 4 and the independent operating points in Phase 5 address this.
+6. **One test environment.** Reproduction was verified only on Windows with Python 3.11.9; other platforms and library versions are untested.
 
 ## VIII. Conclusion
 
-SchedX shows that ML-assisted quantum selection can be evaluated rigorously, and that in this simulated setting its benefit is small. The frozen controller improved mean turnaround over the best fixed quantum by 0.06–0.49% across three workload sizes. The improvement is statistically supported but below the 1% practical threshold, and it is paid for in response time. A better estimator of unfinished work did not translate into better decisions. Future work should model context-switch cost and I/O blocking, allow repeated decisions during a run, and select controllers using a criterion that also accounts for response time.
+SchedX shows that ML-assisted quantum selection can be tested rigorously, and that in this simulated setting the benefit is small. The frozen controller improved mean turnaround over the best fixed quantum by 0.06–0.49% across three workload sizes. That improvement is statistically supported but below the 1% practical threshold, and it comes at the cost of response time. A better estimate of unfinished work did not produce better decisions. Useful next steps would be to model the cost of context switches and I/O blocking, allow several decisions during a run, and choose controllers by a criterion that also takes response time into account.
 
 ## IX. Individual Contribution and AI-Assistance Disclosure
 
-**Contribution.** This is an individual project by Ujval Sai (GitHub `ujvall`). The repository has a single Git author (`cremebits`, the author's Git identity), and the student directed every project phase.
+**Contribution.** This is an individual project by Ujval Sai (GitHub `ujvall`). The repository has one Git author (`cremebits`, the author's Git identity), and the author directed every phase of the project.
 
-**AI assistance (draft for the student to review against the course policy).** The SchedX code, tests, analysis scripts, and documentation were developed with substantial assistance from an AI coding assistant (Claude), working under the student's direction in an interactive development environment. This report draft was also prepared with that assistance from the committed evidence. All reported numbers come from the committed result files; none were produced by hand. [Add here the specific review and work the student personally performed, and any form of disclosure the course requires.]
+**AI assistance.** The SchedX code, tests, analysis scripts, and documentation were developed with substantial help from an AI coding assistant (Claude), working under the author's direction. This report was also written with that assistance, based on the committed evidence. All reported numbers come from the committed result files; none were produced by hand. [Add the review and work you did yourself, and any wording your course requires.]
 
 ## X. Reproducibility
 
-Code, configurations, seed manifests, and raw per-workload CSVs are in the repository: `src/schedx/`, `configs/`, `scripts/`, and `reports/phase2`–`phase5/`. Phase 5's raw inputs are in `reports/phase5/inputs/`. Its per-workload outcomes are in the file `raw_workload_results.csv` in `reports/phase5/`. With Python 3.11, from a fresh clone:
+The code, configurations, seed manifests, and raw per-workload CSVs are all in the repository, under `src/schedx/`, `configs/`, `scripts/`, and `reports/phase2`–`phase5/`. Phase 5's raw inputs are in `reports/phase5/inputs/`, and its per-workload outcomes are in `raw_workload_results.csv` in `reports/phase5/`. To reproduce the results with Python 3.11, starting from a fresh clone:
 
 ```
 pip install -e ".[dev]"
@@ -184,7 +182,7 @@ python scripts/phase5_audit.py
 python -m pytest -q
 ```
 
-The Phase 6 audit regenerated all Phase 3–5 evidence identically from a fresh clone; Phase 2 matched apart from wall-clock timing fields.
+A final audit (Phase 6) regenerated all Phase 3–5 evidence identically from a fresh clone. Phase 2 also matched, apart from wall-clock timing fields.
 
 ## References
 
