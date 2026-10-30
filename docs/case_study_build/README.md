@@ -1,11 +1,11 @@
 # Case-study build
 
-How `docs/final_case_study.{docx,pdf}` were produced from `docs/final_case_study.md`.
+How `docs/final_case_study.{docx,pdf}` were produced from `docs/final_case_study.md`, in IEEE two-column conference layout.
 Nothing here changes code or experimental evidence.
 
 | File | Purpose |
 |---|---|
-| `report_figures.py` | Draws `fig_effects.png` and `fig_response.png` from `reports/phase5/results.json` (committed evidence) |
+| `report_figures.py` | Draws column-width `fig_effects.png` and `fig_response.png` from `reports/phase5/results.json` (committed evidence) |
 | `check_numbers.py` | Recomputes every quantitative claim in the report from committed result files and checks that it appears verbatim |
 | `build_docx.js` | Converts the Markdown to DOCX (Node.js, `docx` npm package 9.5.1) |
 | `export_pdf.ps1` | Exports the DOCX to PDF with Microsoft Word and prints the page count |

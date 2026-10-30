@@ -7,8 +7,9 @@ personal action or confirmation before submission.
 
 | Item | Status |
 |---|---|
-| Page count | 6 pages (A4, 10.5 pt body), counted from the rendered PDF; limit is 8 |
-| Three independent operating points | 6, 14, and 22 processes; 1,000 workloads each (Table 2) |
+| Format | IEEE conference layout: two 3.5-inch columns, US Letter, Times New Roman 10 pt, Roman-numeral sections, `TABLE I` / `Fig. 1` labels, IEEE-style references. Built to the template's specifications, not from IEEE's official template file |
+| Page count | 4 pages, counted from the rendered PDF; limit is 8 |
+| Three independent operating points | 6, 14, and 22 processes; 1,000 workloads each (Table II) |
 | Numbers match committed evidence | 38/38 claims recomputed from result files and found verbatim (`docs/case_study_build/check_numbers.py`) |
 | Figures from committed data | `docs/case_study_build/report_figures.py` reads `reports/phase5/results.json`; no values hand-entered |
 | Repository link | https://github.com/ujvall/schedX/commit/e848cf2 resolves (HTTP 200); repository public |
@@ -23,7 +24,7 @@ personal action or confirmation before submission.
    make sure you can explain and defend every sentence, then remove the
    "Draft status" box at the top. No detector score can be predicted or
    promised.
-2. **AI-use disclosure (Section 9).** Check what your course or university
+2. **AI-use disclosure (Section IX).** Check what your course or university
    requires, then edit the disclosure. Keep it factual: the code, tests, and
    documentation were developed with substantial AI assistance. Fill in the
    bracketed note with the work and review you personally did.
@@ -31,8 +32,10 @@ personal action or confirmation before submission.
    and submission date.
 4. **Contribution statement.** Confirm "individual project by Ujval Sai" and
    that `cremebits` is your Git identity.
-5. **Page-limit rules.** Confirm whether references count toward the eight
-   pages. At 6 pages this is within the limit either way.
+5. **Format and page-limit rules.** If your course requires IEEE's official
+   Word template or A4 paper, tell me or paste the text into it. Remove the
+   draft box and, if your course follows IEEE strictly, the tagline under the
+   title. At 4 pages the report is within the limit either way.
 6. **Plagiarism check.** Run the institution's tool on your final rewritten
    version.
 
